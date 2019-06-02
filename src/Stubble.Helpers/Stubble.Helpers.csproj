@@ -3,6 +3,12 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.3</LangVersion>
+    <Description>A method of adding handlebars style helpers to Stubble</Description>
+    <PackageTags>template;mustache;text;generation;stubble</PackageTags>
+    <RepositoryUrl>https://github.com/StubbleOrg/Stubble.Helpers/</RepositoryUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/StubbleOrg/Stubble/master/assets/extension-logo-64.png</PackageIconUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>Alex McAuliffe</Authors>
   </PropertyGroup>
 
   <ItemGroup>
