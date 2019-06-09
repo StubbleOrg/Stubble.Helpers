@@ -19,6 +19,7 @@ namespace Stubble.Helpers
 
             var nameStart = index;
 
+            // Skip whitespace or until end tag
             while (!slice[index].IsWhitespace() && !slice.Match(processor.CurrentTags.EndTag, index - slice.Start))
             {
                 index++;
@@ -26,11 +27,17 @@ namespace Stubble.Helpers
 
             var name = slice.ToString(nameStart, index);
 
-            if (!slice[index].IsWhitespace())
+            // Skip whitespace or until end tag
+            while (slice[index].IsWhitespace() && !slice.Match(processor.CurrentTags.EndTag, index - slice.Start))
+            {
+                index++;
+            }
+
+            // If we're at an end tag then it's not a helper
+            if (slice.Match(processor.CurrentTags.EndTag, index - slice.Start))
             {
                 return false;
             }
-            index++;
 
             var argsStart = index;
             slice.Start = index;
