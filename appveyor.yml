@@ -11,6 +11,11 @@ artifacts:
 - path: .\artifacts\*.nupkg
 - path: .\coverage-results\*
 test: off
+skip_commits:
+  files:
+    - readme.md
+    - .gitignore
+    - .editorconfig
 deploy:
 - provider: NuGet
   api_key:
