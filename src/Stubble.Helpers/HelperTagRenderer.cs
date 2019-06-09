@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Immutable;
-using System.Dynamic;
-using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
+﻿using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Stubble.Core.Contexts;
 using Stubble.Core.Renderers.StringRenderer;
@@ -11,9 +7,9 @@ namespace Stubble.Helpers
 {
     public class HelperTagRenderer : StringObjectRenderer<HelperToken>
     {
-        private ImmutableDictionary<string, Delegate> _helperCache;
+        private readonly ImmutableDictionary<string, HelperRef> _helperCache;
 
-        public HelperTagRenderer(ImmutableDictionary<string, Delegate> helperCache)
+        public HelperTagRenderer(ImmutableDictionary<string, HelperRef> helperCache)
         {
             _helperCache = helperCache;
         }
@@ -25,27 +21,35 @@ namespace Stubble.Helpers
                 var helperContext = new HelperContext(context);
                 var args = obj.Args;
 
-                var argumentCount = helper.GetType().GetGenericArguments();
-                if ((argumentCount.Length - 2) == args.Length) 
+                var argumentTypes = helper.ArgumentTypes;
+                if ((argumentTypes.Length - 1) == args.Length)
                 {
                     var arr = new object[args.Length + 1];
                     arr[0] = helperContext;
-                    
+
                     for (var i = 0; i < args.Length; i++)
                     {
                         var lookup = context.Lookup(args[i]);
-                        if (argumentCount[i + 1] == lookup.GetType())
+                        if (lookup is null)
+                        {
+                            return;
+                        }
+
+                        if (argumentTypes[i + 1] == lookup.GetType())
                         {
                             arr[i + 1] = lookup;
                         }
+                        else
+                        {
+                            return;
+                        }
                     }
 
-                    var result = helper.Method.Invoke(helper.Target, arr);
+                    var result = helper.Delegate.Method.Invoke(helper.Delegate.Target, arr);
                     if (result is string str)
                     {
                         renderer.Write(str);
                     }
-
                 }
             }
         }

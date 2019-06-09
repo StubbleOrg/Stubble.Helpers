@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using Stubble.Core.Builders;
+﻿using Stubble.Core.Builders;
 using Stubble.Core.Parser;
-using Stubble.Core.Parser.Interfaces;
 using Stubble.Core.Parser.TokenParsers;
 using Stubble.Core.Tokens;
 using Xunit;
@@ -59,7 +57,7 @@ namespace Stubble.Helpers.Test
         }
 
         [Fact]
-        public void OnlyParsesHelperSectionsWithArguments() 
+        public void OnlyParsesHelperSectionsWithArguments()
         {
             var parser = new InstanceMustacheParser();
             var pipeline = BuildHelperPipeline();

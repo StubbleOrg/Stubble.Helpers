@@ -1,8 +1,7 @@
-﻿using Stubble.Core.Settings;
-using Stubble.Core.Renderers.StringRenderer;
-using Stubble.Core.Builders;
+﻿using Stubble.Core.Builders;
 using Stubble.Core.Parser.TokenParsers;
-using System.Collections.Immutable;
+using Stubble.Core.Renderers.StringRenderer;
+using Stubble.Core.Settings;
 
 namespace Stubble.Helpers
 {
@@ -16,7 +15,7 @@ namespace Stubble.Helpers
             pipelineBuilder.AddBefore<InterpolationTagParser>(new HelperTagParser());
             builder.SetParserPipeline(pipelineBuilder.Build());
 
-            builder.TokenRenderers.Add(new HelperTagRenderer(helpers._helpers.ToImmutableDictionary()));
+            builder.TokenRenderers.Add(new HelperTagRenderer(helpers.HelperMap));
 
             return builder;
         }

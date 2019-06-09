@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Stubble.Helpers
 {
     public class Helpers
     {
-        internal readonly Dictionary<string, Delegate> _helpers
-            = new Dictionary<string, Delegate>();
+        private readonly Dictionary<string, HelperRef> _helpers
+            = new Dictionary<string, HelperRef>();
+
+        public ImmutableDictionary<string, HelperRef> HelperMap => _helpers.ToImmutableDictionary();
 
         public Helpers Register(string name, Func<HelperContext, string> func) => Register(name, (Delegate)func);
         public Helpers Register<T2>(string name, Func<HelperContext, T2, string> func) => Register(name, (Delegate)func);
@@ -31,7 +34,7 @@ namespace Stubble.Helpers
                 throw new ArgumentNullException(nameof(name));
             }
 
-            _helpers[name.Trim()] = @delegate;
+            _helpers[name.Trim()] = new HelperRef(@delegate);
             return this;
         }
     }
