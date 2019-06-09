@@ -6,7 +6,7 @@ Stubble helpers is an opinionated method of registering helpers with the Stubble
 To get started with helpers, include the package from nuget and register your helpers like so.
 ```csharp
 var helpers = new Helpers()
-    .Register"FormatCurrency", (HelperContext context, decimal count) => count.ToString("C", culture));
+    .Register("FormatCurrency", (HelperContext context, decimal count) => count.ToString("C", culture));
 
 var stubble = new StubbleBuilder()
     .Configure(conf => conf.AddHelpers(helpers))
