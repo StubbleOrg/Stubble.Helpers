@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Collections.Immutable;
 using System.IO;
@@ -18,7 +18,7 @@ public class RendererTests
         var renderSettings = new RenderSettings();
         var stringRenderer = new StringRender(writer, settings.RendererPipeline);
 
-        var helpers = ImmutableDictionary.Create<string, Delegate>();
+        var helpers = ImmutableDictionary.Create<string, HelperRef>();
 
         var tagRenderer = new HelperTagRenderer(helpers);
 
@@ -44,17 +44,118 @@ public class RendererTests
         var renderSettings = new RenderSettings();
         var stringRenderer = new StringRender(writer, settings.RendererPipeline);
 
-        var helpers = ImmutableDictionary.CreateBuilder<string, Delegate>();
+        var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
 
-        helpers.Add("MyHelper", new Func<HelperContext, int, string>((helperContext, count) => {
+        var helper = new Func<HelperContext, int, string>((helperContext, count) => {
             return $"<{count}>";
-        }));
+        });
+
+        helpers.Add("MyHelper", new HelperRef(helper));
 
         var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
 
         var token = new HelperToken {
             Name = "MyHelper",
             Args = new[] { "Count" }
+        };
+
+        var context = new Context(new { Count = 10 }, settings, renderSettings);
+
+        tagRenderer.Write(stringRenderer, token, context);
+
+        var res = writer.ToString();
+
+        Assert.Equal("<10>", res);
+    }
+
+    [Fact]
+    public void ItShouldRenderNothingWhenValueDoesntExist()
+    {
+        var writer = new StringWriter();
+        var settings = new RendererSettingsBuilder().BuildSettings();
+        var renderSettings = new RenderSettings();
+        var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+
+        var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
+
+        var helper = new Func<HelperContext, int, string>((helperContext, count) => {
+            return $"<{count}>";
+        });
+
+        helpers.Add("MyHelper", new HelperRef(helper));
+
+        var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
+
+        var token = new HelperToken
+        {
+            Name = "MyHelper",
+            Args = new[] { "Count1" }
+        };
+
+        var context = new Context(new { Count = 10 }, settings, renderSettings);
+
+        tagRenderer.Write(stringRenderer, token, context);
+
+        var res = writer.ToString();
+
+        Assert.Equal("", res);
+    }
+
+    [Fact]
+    public void ItShouldRenderNothingWhenTypesDoNotMatch()
+    {
+        var writer = new StringWriter();
+        var settings = new RendererSettingsBuilder().BuildSettings();
+        var renderSettings = new RenderSettings();
+        var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+
+        var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
+
+        var helper = new Func<HelperContext, int, string>((helperContext, count) => {
+            return $"<{count}>";
+        });
+
+        helpers.Add("MyHelper", new HelperRef(helper));
+
+        var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
+
+        var token = new HelperToken
+        {
+            Name = "MyHelper",
+            Args = new[] { "Count" }
+        };
+
+        var context = new Context(new { Count = "10" }, settings, renderSettings);
+
+        tagRenderer.Write(stringRenderer, token, context);
+
+        var res = writer.ToString();
+
+        Assert.Equal("", res);
+    }
+
+    [Fact]
+    public void ItShouldRenderAllowHelpersWithNoArguments()
+    {
+        var writer = new StringWriter();
+        var settings = new RendererSettingsBuilder().BuildSettings();
+        var renderSettings = new RenderSettings();
+        var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+
+        var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
+
+        var helper = new Func<HelperContext, string>((helperContext) => {
+            return $"<{helperContext.Lookup<int>("Count")}>";
+        });
+
+        helpers.Add("MyHelper", new HelperRef(helper));
+
+        var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
+
+        var token = new HelperToken
+        {
+            Name = "MyHelper",
+            Args = Array.Empty<string>()
         };
 
         var context = new Context(new { Count = 10 }, settings, renderSettings);
