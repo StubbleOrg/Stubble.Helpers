@@ -56,6 +56,30 @@ public class HelperTests
     }
 
     [Fact]
+    public void StubbleShouldContinueWorkingAsNormalWithWhitespace()
+    {
+        var culture = new CultureInfo("en-GB");
+        var helpers = new Helpers()
+            .Register<decimal>("FormatCurrency", (context, count) =>
+            {
+                return count.ToString("C", culture);
+            });
+
+        var builder = new StubbleBuilder()
+            .Configure(conf =>
+            {
+                conf.AddHelpers(helpers);
+            })
+            .Build();
+
+        var tmpl = @"{{  Count  }}: {{  FormatCurrency Count  }}, {{  Count2  }}: {{  FormatCurrency Count2  }}";
+
+        var res = builder.Render(tmpl, new { Count = 10m, Count2 = 100.26m });
+
+        Assert.Equal("10: £10.00, 100.26: £100.26", res);
+    }
+
+    [Fact]
     public void HelpersShouldBeAbleToUseContextLookup()
     {
         var helpers = new Helpers()
