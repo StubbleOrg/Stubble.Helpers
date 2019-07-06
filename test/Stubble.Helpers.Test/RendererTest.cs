@@ -166,4 +166,76 @@ public class RendererTests
 
         Assert.Equal("<10>", res);
     }
+
+    [Theory]
+    [InlineData("'Count'", '\'')]
+    [InlineData("\"Count\"", '"')]
+    public void ItShouldCallHelperWhenExistsStaticVariable(string inputData, char trimCharacter)
+    {
+        var writer = new StringWriter();
+        var settings = new RendererSettingsBuilder().BuildSettings();
+        var renderSettings = new RenderSettings();
+        var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+
+        var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
+
+        var helper = new Func<HelperContext, string, string>((helperContext, staticVariable) =>
+        {
+            return $"<{staticVariable}>";
+        });
+
+        helpers.Add("MyHelper", new HelperRef(helper));
+
+        var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
+
+        var token = new HelperToken
+        {
+            Name = "MyHelper",
+            Args = new[] { inputData }
+        };
+
+        var context = new Context(new { Count = 10 }, settings, renderSettings);
+
+        tagRenderer.Write(stringRenderer, token, context);
+
+        var res = writer.ToString();
+
+        Assert.Equal($"<{inputData.Trim(trimCharacter)}>", res);
+    }
+
+    [Theory]
+    [InlineData("'Count'", '\'')]
+    [InlineData("\"Count\"", '"')]
+    public void ItShouldCallHelperWhenExistsStaticAndDynamicVariable(string inputData, char trimCharacter)
+    {
+        var writer = new StringWriter();
+        var settings = new RendererSettingsBuilder().BuildSettings();
+        var renderSettings = new RenderSettings();
+        var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+
+        var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
+
+        var helper = new Func<HelperContext, string, int, string>((helperContext, staticVariable, dynamicVariable) =>
+        {
+            return $"<{staticVariable}#{dynamicVariable}>";
+        });
+
+        helpers.Add("MyHelper", new HelperRef(helper));
+
+        var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
+
+        var token = new HelperToken
+        {
+            Name = "MyHelper",
+            Args = new[] { inputData, "Count" }
+        };
+
+        var context = new Context(new { Count = 10 }, settings, renderSettings);
+
+        tagRenderer.Write(stringRenderer, token, context);
+
+        var res = writer.ToString();
+
+        Assert.Equal($"<{inputData.Trim(trimCharacter)}#10>", res);
+    }
 }

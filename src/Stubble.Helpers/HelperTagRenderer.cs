@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Stubble.Core.Contexts;
 using Stubble.Core.Renderers.StringRenderer;
@@ -29,19 +30,27 @@ namespace Stubble.Helpers
 
                     for (var i = 0; i < args.Length; i++)
                     {
-                        var lookup = context.Lookup(args[i]);
-                        if (lookup is null)
+                        var value = args[i];
+                        if (value.Length > 0 && ((value[0] == '"' && value[value.Length - 1] == '"') || value[0] == '\'' && value[value.Length - 1] == '\''))
                         {
-                            return;
-                        }
-
-                        if (argumentTypes[i + 1] == lookup.GetType())
-                        {
-                            arr[i + 1] = lookup;
+                            arr[i + 1] = Convert.ChangeType(value.Substring(1, value.Length - 2), argumentTypes[i + 1]);
                         }
                         else
                         {
-                            return;
+                            var lookup = context.Lookup(value);
+                            if (lookup is null)
+                            {
+                                return;
+                            }
+
+                            if (argumentTypes[i + 1] == lookup.GetType())
+                            {
+                                arr[i + 1] = lookup;
+                            }
+                            else
+                            {
+                                return;
+                            }
                         }
                     }
 
