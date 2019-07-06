@@ -30,14 +30,13 @@ namespace Stubble.Helpers
 
                     for (var i = 0; i < args.Length; i++)
                     {
-                        var value = args[i];
-                        if (value.Length > 0 && ((value[0] == '"' && value[value.Length - 1] == '"') || value[0] == '\'' && value[value.Length - 1] == '\''))
+                        if (args[i].Length > 0 && ((args[i][0] == '"' && args[i][args[i].Length - 1] == '"') || args[i][0] == '\'' && args[i][args[i].Length - 1] == '\''))
                         {
-                            arr[i + 1] = Convert.ChangeType(value.Substring(1, value.Length - 2), argumentTypes[i + 1]);
+                            arr[i + 1] = Convert.ChangeType(args[i].Substring(1, args[i].Length - 2), argumentTypes[i + 1]);
                         }
                         else
                         {
-                            var lookup = context.Lookup(value);
+                            var lookup = context.Lookup(args[i]);
                             if (lookup is null)
                             {
                                 return;
