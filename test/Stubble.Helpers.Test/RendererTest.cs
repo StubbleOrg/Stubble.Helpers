@@ -170,6 +170,8 @@ public class RendererTests
     [Theory]
     [InlineData("'Count'", '\'')]
     [InlineData("\"Count\"", '"')]
+    [InlineData("\"Word with spaces\"", '"')]
+    [InlineData("\"Word with spaces and quote \\\" inside\"", '"')]
     public void ItShouldCallHelperWhenExistsStaticVariable(string inputData, char trimCharacter)
     {
         var writer = new StringWriter();
