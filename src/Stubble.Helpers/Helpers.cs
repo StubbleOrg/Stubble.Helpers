@@ -11,6 +11,8 @@ namespace Stubble.Helpers
 
         public ImmutableDictionary<string, HelperRef> HelperMap => _helpers.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
 
+        public bool IsLinkedHelpersAllowed { get; private set; }
+
         public Helpers Register(string name, Func<HelperContext, string> func) => Register(name, (Delegate)func);
         public Helpers Register<T2>(string name, Func<HelperContext, T2, string> func) => Register(name, (Delegate)func);
         public Helpers Register<T2, T3>(string name, Func<HelperContext, T2, T3, string> func) => Register(name, (Delegate)func);
@@ -35,6 +37,12 @@ namespace Stubble.Helpers
             }
 
             _helpers[name.Trim()] = new HelperRef(@delegate);
+            return this;
+        }
+
+        public Helpers AllowLinkedHelpers(bool allow = true)
+        {
+            IsLinkedHelpersAllowed = allow;
             return this;
         }
     }

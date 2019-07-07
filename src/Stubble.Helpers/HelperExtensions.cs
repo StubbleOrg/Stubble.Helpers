@@ -11,9 +11,11 @@ namespace Stubble.Helpers
         public static RendererSettingsBuilder AddHelpers(this RendererSettingsBuilder builder, Helpers helpers)
         {
             builder.ConfigureParserPipeline(pipelineBuilder => pipelineBuilder
-                .AddBefore<InterpolationTagParser>(new HelperTagParser()));
+                .AddBefore<InterpolationTagParser>(helpers.IsLinkedHelpersAllowed ? new LinkedHelperTagParser() : new HelperTagParser()));
 
-            builder.TokenRenderers.Add(new HelperTagRenderer(helpers.HelperMap));
+            var helperTagRender = new HelperTagRenderer(helpers.HelperMap);
+            builder.TokenRenderers.Add(helperTagRender);
+            builder.TokenRenderers.Add(new LinkedHelperRenderer(helperTagRender));
 
             return builder;
         }

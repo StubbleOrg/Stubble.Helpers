@@ -316,5 +316,104 @@ namespace Stubble.Helpers.Test
 
             Assert.Equal("<10>", res);
         }
+
+        [Fact]
+        public void ItShouldRenderAllowLnkedHelpersWithNoArguments()
+        {
+            var writer = new StringWriter();
+            var settings = new RendererSettingsBuilder().BuildSettings();
+            var renderSettings = new RenderSettings();
+            var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+
+            var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
+
+            var helper = new Func<HelperContext, int, string>((helperContext, count) =>
+            {
+                return $"<{count}>";
+            });
+
+            helpers.Add("MyHelper", new HelperRef(helper));
+
+            var pipedHelper = new Func<HelperContext, string, string>((helperContext, pipedValue) =>
+            {
+                return string.Concat("\"", pipedValue, "\"");
+            });
+
+            helpers.Add("PipedHelper", new HelperRef(pipedHelper));
+
+            var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
+            var linkedTagRender = new LinkedHelperRenderer(tagRenderer);
+
+            var token = new LinkedHelperTokens(new[]
+                {
+                    new HelperToken
+                    {
+                        Name = "MyHelper",
+                        Args = ImmutableArray.Create(new HelperArgument("Count"))
+                    },
+                    new HelperToken
+                    {
+                        Name = "PipedHelper",
+                    },
+                });
+
+            var context = new Context(new { Count = 10 }, settings, renderSettings);
+
+            linkedTagRender.Write(stringRenderer, token, context);
+
+            var res = writer.ToString();
+
+            Assert.Equal("\"<10>\"", res);
+        }
+
+        [Fact]
+        public void ItShouldRenderAllowLnkedHelpersWithArguments()
+        {
+            var writer = new StringWriter();
+            var settings = new RendererSettingsBuilder().BuildSettings();
+            var renderSettings = new RenderSettings();
+            var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+
+            var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
+
+            var helper = new Func<HelperContext, int, string>((helperContext, count) =>
+            {
+                return $"<{count}>";
+            });
+
+            helpers.Add("MyHelper", new HelperRef(helper));
+
+            var pipedHelper = new Func<HelperContext, string, string, string>((helperContext, pipedValue, pipedArgument) =>
+            {
+                return string.Concat("\"", pipedValue, pipedArgument, "\"");
+            });
+
+            helpers.Add("PipedHelper", new HelperRef(pipedHelper));
+
+            var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
+            var linkedTagRender = new LinkedHelperRenderer(tagRenderer);
+
+            var token = new LinkedHelperTokens(new[]
+                {
+                    new HelperToken
+                    {
+                        Name = "MyHelper",
+                        Args =  ImmutableArray.Create(new HelperArgument("Count"))
+                    },
+                    new HelperToken
+                    {
+                        Name = "PipedHelper",
+                        Args =  ImmutableArray.Create(new HelperArgument("MyArgument", false))
+                    },
+                });
+
+            var context = new Context(new { Count = 10 }, settings, renderSettings);
+
+            linkedTagRender.Write(stringRenderer, token, context);
+
+            var res = writer.ToString();
+
+            Assert.Equal("\"<10>MyArgument\"", res);
+        }
     }
 }

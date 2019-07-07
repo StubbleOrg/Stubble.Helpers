@@ -9,6 +9,11 @@ namespace Stubble.Helpers
 
         public ImmutableArray<HelperArgument> Args { get; set; }
 
+        public HelperToken Clone()
+        {
+            return (HelperToken)MemberwiseClone();
+        }
+
         public override bool Equals(HelperToken other) =>
             other is object
             && (other.TagStartPosition, other.TagEndPosition, other.ContentStartPosition, other.ContentEndPosition, other.IsClosed)

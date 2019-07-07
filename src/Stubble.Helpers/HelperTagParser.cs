@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
+using System.Runtime.CompilerServices;
 using Stubble.Core.Exceptions;
 using Stubble.Core.Imported;
 using Stubble.Core.Parser;
@@ -12,7 +13,35 @@ namespace Stubble.Helpers
     {
         public override bool Match(Processor processor, ref StringSlice slice)
         {
-            var tagStart = slice.Start - processor.CurrentTags.StartTag.Length;
+            var tag = ParseHelperToken(processor, ref slice);
+            if (tag == null)
+            {
+                return false;
+            }
+
+            slice.Start += processor.CurrentTags.EndTag.Length;
+
+            processor.CurrentToken = tag;
+            processor.HasSeenNonSpaceOnLine = true;
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual bool MatchEndTag(Processor processor, ref StringSlice slice, int offset = 0)
+            => slice.Match(processor.CurrentTags.EndTag, offset);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual int StartTagLength(Processor processor, ref StringSlice slice)
+            => processor.CurrentTags.StartTag.Length;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual int EndTagLength(Processor processor, ref StringSlice slice)
+            => processor.CurrentTags.EndTag.Length;
+
+        protected HelperToken ParseHelperToken(Processor processor, ref StringSlice slice, bool matchEmptyTag = false)
+        {
+            var tagStart = slice.Start - StartTagLength(processor, ref slice);
             var index = slice.Start;
 
             while (slice[index].IsWhitespace())
@@ -23,7 +52,7 @@ namespace Stubble.Helpers
             var nameStart = index;
 
             // Skip whitespace or until end tag
-            while (!slice[index].IsWhitespace() && !slice.Match(processor.CurrentTags.EndTag, index - slice.Start))
+            while (!slice[index].IsWhitespace() && !MatchEndTag(processor, ref slice, index - slice.Start))
             {
                 index++;
             }
@@ -31,21 +60,21 @@ namespace Stubble.Helpers
             var name = slice.ToString(nameStart, index);
 
             // Skip whitespace or until end tag
-            while (slice[index].IsWhitespace() && !slice.Match(processor.CurrentTags.EndTag, index - slice.Start))
+            while (slice[index].IsWhitespace() && !MatchEndTag(processor, ref slice, index - slice.Start))
             {
                 index++;
             }
 
             // If we're at an end tag then it's not a helper
-            if (slice.Match(processor.CurrentTags.EndTag, index - slice.Start))
+            if (!matchEmptyTag && MatchEndTag(processor, ref slice, index - slice.Start))
             {
-                return false;
+                return null;
             }
 
             var argsStart = index;
             slice.Start = index;
 
-            while (!slice.IsEmpty && !slice.Match(processor.CurrentTags.EndTag))
+            while (!slice.IsEmpty && !MatchEndTag(processor, ref slice))
             {
                 slice.NextChar();
             }
@@ -54,7 +83,7 @@ namespace Stubble.Helpers
             args.TrimEnd();
             var contentEnd = args.End + 1;
 
-            if (!slice.Match(processor.CurrentTags.EndTag))
+            if (!MatchEndTag(processor, ref slice))
             {
                 throw new StubbleException($"Unclosed Tag at {slice.Start.ToString()}");
             }
@@ -68,15 +97,11 @@ namespace Stubble.Helpers
                 Name = name,
                 Args = argsList,
                 ContentEndPosition = contentEnd,
-                TagEndPosition = slice.Start + processor.CurrentTags.EndTag.Length,
+                TagEndPosition = slice.Start + EndTagLength(processor, ref slice),
                 IsClosed = true
             };
-            slice.Start += processor.CurrentTags.EndTag.Length;
 
-            processor.CurrentToken = tag;
-            processor.HasSeenNonSpaceOnLine = true;
-
-            return true;
+            return tag;
         }
 
         private ImmutableArray<HelperArgument> ParseArguments(StringSlice slice)

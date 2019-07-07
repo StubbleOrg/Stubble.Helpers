@@ -84,6 +84,35 @@ namespace Stubble.Helpers.Test
             Assert.Equal("10: £10.00, 100.26: £100.26", res);
         }
 
+        [Theory]
+        [InlineData("{{FormatCurrency Count|Quote}}", "\"£10.00\"")]
+        [InlineData("{{FormatCurrency Count | Quote }}", "\"£10.00\"")]
+        [InlineData("{{FormatCurrency Count|Quote|Quote}}", "\"\"£10.00\"\"")]
+        [InlineData("{{FormatCurrency Count | Quote | Quote }}", "\"\"£10.00\"\"")]
+        public void RegisteredLinkedHelpersShouldBeRun(string tmpl, string expected)
+        {
+            var culture = new CultureInfo("en-GB");
+            var helpers = new Helpers()
+                .Register<decimal>("FormatCurrency", (context, count) =>
+                {
+                    return count.ToString("C", culture);
+                })
+                .Register<string>("Quote", (context, value)
+                    => string.Concat("\"", value, "\""))
+                .AllowLinkedHelpers();
+
+            var builder = new StubbleBuilder()
+                .Configure(conf =>
+                {
+                    conf.AddHelpers(helpers);
+                })
+                .Build();
+
+            var res = builder.Render(tmpl, new { Count = 10m });
+
+            Assert.Equal(expected, res);
+        }
+
         [Fact]
         public void HelpersShouldBeAbleToUseContextLookup()
         {

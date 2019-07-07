@@ -8,10 +8,10 @@ namespace Stubble.Helpers.Test
 {
     public class ParserTest
     {
-        public ParserPipeline BuildHelperPipeline()
+        public ParserPipeline BuildHelperPipeline(bool allowLinkedParsers = false)
         {
             var builder = new ParserPipelineBuilder();
-            builder.AddBefore<InterpolationTagParser>(new HelperTagParser());
+            builder.AddBefore<InterpolationTagParser>(allowLinkedParsers ? new LinkedHelperTagParser() :  new HelperTagParser());
             return builder.Build();
         }
 
@@ -130,6 +130,76 @@ namespace Stubble.Helpers.Test
             Assert.Equal("MyHelper", helperToken.Name.ToString());
             Assert.Equal(argumentValue, helperToken.Args[0].Value);
             Assert.False(helperToken.Args[0].ShouldAttemptContextLoad);
+        }
+
+        [Theory]
+        [InlineData("{{MyHelper MyArgument1|MyHelper2}}")]
+        [InlineData("{{ MyHelper MyArgument1 | MyHelper2 }}")]
+        public void ItParsesLinkedHelpersWithoutArguments(string data)
+        {
+            var parser = new InstanceMustacheParser();
+            var pipeline = BuildHelperPipeline(true);
+
+            var tokens = parser.Parse(data, pipeline: pipeline);
+
+            Assert.Single(tokens.Children);
+            var helperToken = Assert.IsType<LinkedHelperTokens>(tokens.Children[0]);
+            Assert.Equal(2, helperToken.Tokens.Count);
+
+            Assert.Equal("MyHelper", helperToken.Tokens[0].Name.ToString());
+            Assert.Single(helperToken.Tokens[0].Args);
+            Assert.Equal("MyArgument1", helperToken.Tokens[0].Args[0].Value);
+
+            Assert.Equal("MyHelper2", helperToken.Tokens[1].Name.ToString());
+            Assert.Empty(helperToken.Tokens[1].Args);
+        }
+
+        [Theory]
+        [InlineData("{{MyHelper MyArgument1|MyHelper2 MyArgument2}}")]
+        [InlineData("{{ MyHelper MyArgument1 | MyHelper2 MyArgument2 }}")]
+        public void ItParsesLinkedHelpersWithWithArguments(string data)
+        {
+            var parser = new InstanceMustacheParser();
+            var pipeline = BuildHelperPipeline(true);
+
+            var tokens = parser.Parse(data, pipeline: pipeline);
+
+            Assert.Single(tokens.Children);
+            var helperToken = Assert.IsType<LinkedHelperTokens>(tokens.Children[0]);
+            Assert.Equal(2, helperToken.Tokens.Count);
+
+            Assert.Equal("MyHelper", helperToken.Tokens[0].Name.ToString());
+            Assert.Single(helperToken.Tokens[0].Args);
+            Assert.Equal("MyArgument1", helperToken.Tokens[0].Args[0].Value);
+
+            Assert.Equal("MyHelper2", helperToken.Tokens[1].Name.ToString());
+            Assert.Single(helperToken.Tokens[1].Args);
+            Assert.Equal("MyArgument2", helperToken.Tokens[1].Args[0].Value);
+        }
+
+        [Theory]
+        [InlineData("{{MyHelper MyArgument1 MyArgument2|MyHelper2 MyArgument3 MyArgument4}}")]
+        [InlineData("{{ MyHelper MyArgument1 MyArgument2 | MyHelper2 MyArgument3 MyArgument4 }}")]
+        public void ItParsesLinkedHelpersWithMultipleArguments(string data)
+        {
+            var parser = new InstanceMustacheParser();
+            var pipeline = BuildHelperPipeline(true);
+
+            var tokens = parser.Parse(data, pipeline: pipeline);
+
+            Assert.Single(tokens.Children);
+            var helperToken = Assert.IsType<LinkedHelperTokens>(tokens.Children[0]);
+            Assert.Equal(2, helperToken.Tokens.Count);
+
+            Assert.Equal("MyHelper", helperToken.Tokens[0].Name.ToString());
+            Assert.Equal(2, helperToken.Tokens[0].Args.Length);
+            Assert.Equal("MyArgument1", helperToken.Tokens[0].Args[0].Value);
+            Assert.Equal("MyArgument2", helperToken.Tokens[0].Args[1].Value);
+
+            Assert.Equal("MyHelper2", helperToken.Tokens[1].Name.ToString());
+            Assert.Equal(2, helperToken.Tokens[1].Args.Length);
+            Assert.Equal("MyArgument3", helperToken.Tokens[1].Args[0].Value);
+            Assert.Equal("MyArgument4", helperToken.Tokens[1].Args[1].Value);
         }
     }
 }
