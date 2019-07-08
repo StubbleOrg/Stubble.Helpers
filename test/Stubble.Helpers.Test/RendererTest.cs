@@ -69,6 +69,72 @@ public class RendererTests
     }
 
     [Fact]
+    public void ItShouldCallHelperWhenExistsWithArgumentFromParent()
+    {
+        var writer = new StringWriter();
+        var settings = new RendererSettingsBuilder().BuildSettings();
+        var renderSettings = new RenderSettings();
+        var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+
+        var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
+
+        var helper = new Func<HelperContext, int, int, string>((helperContext, count, count2) => {
+            return $"<{count}-{count2}>";
+        });
+
+        helpers.Add("MyHelper", new HelperRef(helper));
+
+        var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
+
+        var token = new HelperToken {
+            Name = "MyHelper",
+            Args = new[] { "Count", "Count2" }
+        };
+
+        var context = new Context(new { Count = 10 }, settings, renderSettings)
+            .Push(new { Count2 = 20 });
+
+        tagRenderer.Write(stringRenderer, token, context);
+
+        var res = writer.ToString();
+
+        Assert.Equal("<10-20>", res);
+    }
+
+    [Fact]
+    public void ItShouldCallHelperWhenExistsWithArgumentOverrideFromParent()
+    {
+        var writer = new StringWriter();
+        var settings = new RendererSettingsBuilder().BuildSettings();
+        var renderSettings = new RenderSettings();
+        var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+
+        var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
+
+        var helper = new Func<HelperContext, int, int, string>((helperContext, count, count2) => {
+            return $"<{count}-{count2}>";
+        });
+
+        helpers.Add("MyHelper", new HelperRef(helper));
+
+        var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
+
+        var token = new HelperToken {
+            Name = "MyHelper",
+            Args = new[] { "Count", "Count2" }
+        };
+
+        var context = new Context(new { Count = 10 }, settings, renderSettings)
+            .Push(new { Count = 20, Count2 = 20 });
+
+        tagRenderer.Write(stringRenderer, token, context);
+
+        var res = writer.ToString();
+
+        Assert.Equal("<20-20>", res);
+    }
+
+    [Fact]
     public void ItShouldRenderNothingWhenValueDoesntExist()
     {
         var writer = new StringWriter();
