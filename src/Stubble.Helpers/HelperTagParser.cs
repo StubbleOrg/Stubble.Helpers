@@ -1,4 +1,6 @@
-﻿using Stubble.Core.Exceptions;
+﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using Stubble.Core.Exceptions;
 using Stubble.Core.Imported;
 using Stubble.Core.Parser;
 using Stubble.Core.Parser.Interfaces;
@@ -48,7 +50,7 @@ namespace Stubble.Helpers
             }
 
             var args = new StringSlice(slice.Text, argsStart, slice.Start - 1);
-            args.TrimEnd();
+            args.Trim();
             var contentEnd = args.End + 1;
 
             var tag = new HelperToken
@@ -64,13 +66,33 @@ namespace Stubble.Helpers
                 throw new StubbleException($"Unclosed Tag at {slice.Start.ToString()}");
             }
 
-            var argsList = args.ToString().Split(' ');
-            for (var i = 0; i < argsList.Length; i++)
+            var argsList = new List<string>();
+            index = args.Start;
+            var argStart = args.Start;
+            bool insideString = false;
+            while (index <= args.End)
             {
-                argsList[i] = argsList[i].Trim();
+                if (args[index] == '"')
+                {
+                    if (insideString)
+                    {
+                        insideString = false;
+                    }
+                    else
+                    {
+                        insideString = true;
+                    }
+                }
+                else if (!insideString && (args[index].IsWhitespace() || slice.Match(processor.CurrentTags.EndTag, index)))
+                {
+                    argsList.Add(args.ToString(argStart, index).Trim());
+                    argStart += index - args.Start;
+                }
+                index++;
             }
+            argsList.Add(args.ToString(argStart, index).Trim());
 
-            tag.Args = argsList;
+            tag.Args = argsList.ToArray();
             tag.ContentEndPosition = contentEnd;
             tag.TagEndPosition = slice.Start + processor.CurrentTags.EndTag.Length;
             slice.Start += processor.CurrentTags.EndTag.Length;

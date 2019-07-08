@@ -41,6 +41,22 @@ namespace Stubble.Helpers.Test
             Assert.Equal("MyArgument", helperToken.Args[0]);
         }
 
+        [Theory]
+        [InlineData("{{MyHelper \"MyArgument\"}}", "\"MyArgument\"")]
+        [InlineData("{{MyHelper \"My Argument\"}}", "\"My Argument\"")]
+        public void ItParsesHelpersWithStaticArgument(string data, string expectedArgument)
+        {
+            var parser = new InstanceMustacheParser();
+            var pipeline = BuildHelperPipeline();
+
+            var tokens = parser.Parse(data, pipeline: pipeline);
+
+            Assert.Single(tokens.Children);
+            var helperToken = Assert.IsType<HelperToken>(tokens.Children[0]);
+            Assert.Equal("MyHelper", helperToken.Name.ToString());
+            Assert.Equal(expectedArgument, helperToken.Args[0]);
+        }
+
         [Fact]
         public void ItParsesHelpersWithMultipleArguments()
         {

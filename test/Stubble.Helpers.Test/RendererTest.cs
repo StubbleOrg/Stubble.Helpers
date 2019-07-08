@@ -168,7 +168,6 @@ public class RendererTests
     }
 
     [Theory]
-    [InlineData("'Count'", '\'')]
     [InlineData("\"Count\"", '"')]
     [InlineData("\"Word with spaces\"", '"')]
     [InlineData("\"Word with spaces and quote \\\" inside\"", '"')]
@@ -205,15 +204,14 @@ public class RendererTests
         Assert.Equal($"<{inputData.Trim(trimCharacter)}>", res);
     }
 
-    [Theory]
-    [InlineData("'Count'", '\'')]
-    [InlineData("\"Count\"", '"')]
-    public void ItShouldCallHelperWhenExistsStaticAndDynamicVariable(string inputData, char trimCharacter)
-    {
-        var writer = new StringWriter();
-        var settings = new RendererSettingsBuilder().BuildSettings();
-        var renderSettings = new RenderSettings();
-        var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+        [Theory]
+        [InlineData("\"Count\"", '"')]
+        public void ItShouldCallHelperWhenExistsStaticAndDynamicVariable(string inputData, char trimCharacter)
+        {
+            var writer = new StringWriter();
+            var settings = new RendererSettingsBuilder().BuildSettings();
+            var renderSettings = new RenderSettings();
+            var stringRenderer = new StringRender(writer, settings.RendererPipeline);
 
         var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
 

@@ -30,7 +30,7 @@ namespace Stubble.Helpers
 
                     for (var i = 0; i < args.Length; i++)
                     {
-                        if (args[i].Length > 0 && ((args[i][0] == '"' && args[i][args[i].Length - 1] == '"') || args[i][0] == '\'' && args[i][args[i].Length - 1] == '\''))
+                        if (args[i].Length > 0 && args[i][0] == '"' && args[i][args[i].Length - 1] == '"')
                         {
                             arr[i + 1] = Convert.ChangeType(args[i].Substring(1, args[i].Length - 2), argumentTypes[i + 1]);
                         }
