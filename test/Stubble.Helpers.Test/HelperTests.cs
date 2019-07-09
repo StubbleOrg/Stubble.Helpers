@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
+using McMaster.Extensions.Xunit;
 using Stubble.Core.Builders;
 using Xunit;
 
@@ -33,6 +34,7 @@ namespace Stubble.Helpers.Test
         }
 
         [Fact]
+        [UseCulture("en-GB")]
         public void StubbleShouldContinueWorkingAsNormal()
         {
             var culture = new CultureInfo("en-GB");
@@ -53,10 +55,11 @@ namespace Stubble.Helpers.Test
 
             var res = builder.Render(tmpl, new { Count = 10m, Count2 = 100.26m });
 
-            Assert.Equal($"10: £10.00, {100.26m}: £100.26", res);
+            Assert.Equal("10: £10.00, 100.26: £100.26", res);
         }
 
         [Fact]
+        [UseCulture("en-GB")]
         public void StubbleShouldContinueWorkingAsNormalWithWhitespace()
         {
             var culture = new CultureInfo("en-GB");
@@ -77,7 +80,7 @@ namespace Stubble.Helpers.Test
 
             var res = builder.Render(tmpl, new { Count = 10m, Count2 = 100.26m });
 
-            Assert.Equal($"10: £10.00, {100.26m}: £100.26", res);
+            Assert.Equal("10: £10.00, 100.26: £100.26", res);
         }
 
         [Fact]
