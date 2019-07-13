@@ -30,11 +30,6 @@ namespace Stubble.Helpers
                     for (var i = 0; i < args.Length; i++)
                     {
                         var lookup = context.Lookup(args[i]);
-                        var currentContext = context;
-                        while (lookup is null && (currentContext = currentContext.ParentContext) != null)
-                        {
-                            lookup = currentContext.Lookup(args[i]);
-                        }
 
                         if (lookup is null)
                         {
