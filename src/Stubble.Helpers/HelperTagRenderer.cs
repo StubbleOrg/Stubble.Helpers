@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Stubble.Core.Contexts;
 using Stubble.Core.Renderers.StringRenderer;
@@ -30,20 +31,14 @@ namespace Stubble.Helpers
                     for (var i = 0; i < args.Length; i++)
                     {
                         var lookup = context.Lookup(args[i]);
+                        lookup = TryConvertTypeIfRequired(lookup, args[i], argumentTypes[i + 1]);
 
                         if (lookup is null)
                         {
                             return;
                         }
 
-                        if (argumentTypes[i + 1] == lookup.GetType())
-                        {
-                            arr[i + 1] = lookup;
-                        }
-                        else
-                        {
-                            return;
-                        }
+                        arr[i + 1] = lookup;
                     }
 
                     var result = helper.Delegate.Method.Invoke(helper.Delegate.Target, arr);
@@ -59,6 +54,37 @@ namespace Stubble.Helpers
         {
             Write(renderer, obj, context);
             return Task.CompletedTask;
+        }
+
+        public static object TryConvertTypeIfRequired(object value, string arg, Type type)
+        {
+            if (value is null)
+            {
+                // When lookup is null we should use the argument as passed
+                value = arg;
+            }
+
+            var lookupType = value.GetType();
+
+            if (lookupType == type)
+            {
+                return value;
+            }
+
+            if (type.IsAssignableFrom(lookupType))
+            {
+                return value;
+            }
+
+            try
+            {
+                return Convert.ChangeType(value, type);
+            }
+            catch
+            {
+            }
+
+            return null;
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using Stubble.Core.Exceptions;
+﻿using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using Stubble.Core.Exceptions;
 using Stubble.Core.Imported;
 using Stubble.Core.Parser;
 using Stubble.Core.Parser.Interfaces;
@@ -64,11 +66,7 @@ namespace Stubble.Helpers
                 throw new StubbleException($"Unclosed Tag at {slice.Start.ToString()}");
             }
 
-            var argsList = args.ToString().Split(' ');
-            for (var i = 0; i < argsList.Length; i++)
-            {
-                argsList[i] = argsList[i].Trim();
-            }
+            var argsList = ParseArguments(new StringSlice(args.Text, args.Start, args.End));
 
             tag.Args = argsList;
             tag.ContentEndPosition = contentEnd;
@@ -79,6 +77,64 @@ namespace Stubble.Helpers
             processor.HasSeenNonSpaceOnLine = true;
 
             return true;
+        }
+
+        private string[] ParseArguments(StringSlice slice)
+        {
+            slice.TrimStart();
+            var args = new List<string>();
+
+            while (!slice.IsEmpty)
+            {
+                if (slice.CurrentChar == '"' || slice.CurrentChar == '\'')
+                {
+                    args.Add(ParseQuotedString(ref slice));
+                    continue;
+                }
+                else
+                {
+                    while (slice.CurrentChar.IsWhitespace())
+                    {
+                        slice.NextChar();
+                    }
+
+                    var start = slice.Start;
+
+                    while (!slice.CurrentChar.IsWhitespace() && !slice.IsEmpty)
+                    {
+                        slice.NextChar();
+                    }
+
+                    args.Add(slice.Text.Substring(start, slice.Start - start));
+                }
+
+                while (slice.CurrentChar.IsWhitespace())
+                {
+                    slice.NextChar();
+                }
+            }
+
+            return args.ToArray();
+        }
+
+        private static string ParseQuotedString(ref StringSlice slice)
+        {
+            var startQuote = slice.CurrentChar;
+            slice.NextChar();
+            var st = slice.Start;
+
+            while (!(slice.CurrentChar == startQuote && slice[slice.Start - 1] != '\\'))
+            {
+                if (slice.IsEmpty)
+                    throw new StubbleException($"Unclosed string at {slice.Start}");
+
+                slice.NextChar();
+            }
+
+            var end = slice.Start;
+            slice.NextChar();
+
+            return Regex.Unescape(slice.Text.Substring(st, end - st));
         }
     }
 }
