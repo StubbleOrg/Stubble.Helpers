@@ -10,6 +10,7 @@ namespace Stubble.Helpers.Test
     public class HelperTests
     {
         [Fact]
+        [UseCulture("en-GB")]
         public void RegisteredHelpersShouldBeRun()
         {
             var culture = new CultureInfo("en-GB");
