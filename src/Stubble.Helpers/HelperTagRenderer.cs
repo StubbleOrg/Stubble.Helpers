@@ -31,27 +31,14 @@ namespace Stubble.Helpers
                     for (var i = 0; i < args.Length; i++)
                     {
                         var lookup = context.Lookup(args[i]);
+                        lookup = TryConvertTypeIfRequired(lookup, argumentTypes[i + 1]);
 
                         if (lookup is null)
                         {
                             return;
                         }
 
-                        if (argumentTypes[i + 1].IsAssignableFrom(lookup.GetType()))
-                        {
-                            arr[i + 1] = lookup;
-                            continue;
-                        }
-
-                        try
-                        {
-                            var convertedType = Convert.ChangeType(lookup, argumentTypes[i + 1]);
-                            arr[i + 1] = convertedType;
-                        }
-                        catch
-                        {
-                            return;
-                        }
+                        arr[i + 1] = lookup;
                     }
 
                     var result = helper.Delegate.Method.Invoke(helper.Delegate.Target, arr);
@@ -67,6 +54,36 @@ namespace Stubble.Helpers
         {
             Write(renderer, obj, context);
             return Task.CompletedTask;
+        }
+
+        public static object TryConvertTypeIfRequired(object lookup, Type type)
+        {
+            if (lookup is null)
+            {
+                return null;
+            }
+
+            var lookupType = lookup.GetType();
+
+            if (lookupType == type)
+            {
+                return lookup;
+            }
+
+            if (type.IsAssignableFrom(lookupType))
+            {
+                return lookup;
+            }
+
+            try
+            {
+                return Convert.ChangeType(lookup, type);
+            }
+            catch
+            {
+            }
+
+            return null;
         }
     }
 }
