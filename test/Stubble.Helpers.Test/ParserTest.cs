@@ -67,5 +67,62 @@ namespace Stubble.Helpers.Test
             Assert.Single(tokens.Children);
             Assert.IsType<SectionToken>(tokens.Children[0]);
         }
+
+        [Fact]
+        public void ItShouldBeAbleToParseStaticParameters()
+        {
+            var parser = new InstanceMustacheParser();
+            var pipeline = BuildHelperPipeline();
+
+            var tokens = parser.Parse("{{MyHelper 10 MyArgument2}}", pipeline: pipeline);
+
+            Assert.Single(tokens.Children);
+            var helperToken = Assert.IsType<HelperToken>(tokens.Children[0]);
+            Assert.Equal("MyHelper", helperToken.Name.ToString());
+            Assert.Equal("10", helperToken.Args[0]);
+            Assert.Equal("MyArgument2", helperToken.Args[1]);
+        }
+
+        [Theory]
+        [InlineData("\"Quoted\"")]
+        [InlineData("\'Quoted\'")]
+        public void ItShouldBeAbleToParseStaticParametersWithQuotes(object value)
+        {
+            var argument = (string)value;
+            var argumentValue = argument
+                .Replace("\"", string.Empty)
+                .Replace("\'", string.Empty);
+
+            var parser = new InstanceMustacheParser();
+            var pipeline = BuildHelperPipeline();
+
+            var tokens = parser.Parse($"{{{{MyHelper {argument}}}}}", pipeline: pipeline);
+
+            Assert.Single(tokens.Children);
+            var helperToken = Assert.IsType<HelperToken>(tokens.Children[0]);
+            Assert.Equal("MyHelper", helperToken.Name.ToString());
+            Assert.Equal(argumentValue, helperToken.Args[0]);
+        }
+
+        [Theory]
+        [InlineData("\"Quoted With Spaces\"")]
+        [InlineData("\'Quoted With Spaces\'")]
+        public void ItShouldBeAbleToParseStaticParametersWithQuotesAndSpaces(object value)
+        {
+            var argument = (string)value;
+            var argumentValue = argument
+                .Replace("\"", string.Empty)
+                .Replace("\'", string.Empty);
+
+            var parser = new InstanceMustacheParser();
+            var pipeline = BuildHelperPipeline();
+
+            var tokens = parser.Parse($"{{{{MyHelper {argument}}}}}", pipeline: pipeline);
+
+            Assert.Single(tokens.Children);
+            var helperToken = Assert.IsType<HelperToken>(tokens.Children[0]);
+            Assert.Equal("MyHelper", helperToken.Name.ToString());
+            Assert.Equal(argumentValue, helperToken.Args[0]);
+        }
     }
 }

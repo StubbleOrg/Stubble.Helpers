@@ -114,5 +114,99 @@ namespace Stubble.Helpers.Test
 
             Assert.Equal(string.Join(", ", list), res);
         }
+
+        [Fact]
+        [UseCulture("en-GB")]
+        public void HelpersShouldBeAbleToHaveOnlyStaticParameters()
+        {
+            var culture = new CultureInfo("en-GB");
+            var helpers = new Helpers()
+                .Register<decimal>("FormatCurrency", (context, count) =>
+                {
+                    return count.ToString("C", culture);
+                });
+
+            var builder = new StubbleBuilder()
+                .Configure(conf =>
+                {
+                    conf.AddHelpers(helpers);
+                })
+                .Build();
+
+            var tmpl = @"{{FormatCurrency 10}}, {{FormatCurrency Count}}";
+
+            var res = builder.Render(tmpl, new { Count = 100.26m });
+
+            Assert.Equal("£10.00, £100.26", res);
+        }
+
+        [Fact]
+        public void HelpersShouldBeAbleToHaveStaticAndDynamicParameters()
+        {
+            var helpers = new Helpers()
+                .Register<decimal, decimal>("Multiply", (context, count, multiplier) =>
+                {
+                    return $"{count * multiplier}";
+                });
+
+            var builder = new StubbleBuilder()
+                .Configure(conf =>
+                {
+                    conf.AddHelpers(helpers);
+                })
+                .Build();
+
+            var tmpl = @"{{Multiply 5 5}}, {{Multiply Count 5}}";
+
+            var res = builder.Render(tmpl, new { Count = 2 });
+
+            Assert.Equal("25, 10", res);
+        }
+
+        [Fact]
+        public void HelpersShouldBeAbleToHaveStaticParameterWithSpaces()
+        {
+            var helpers = new Helpers()
+                .Register<string, string>("DefaultMe", (context, str, @default) =>
+                {
+                    return string.IsNullOrEmpty(str) ? @default : str;
+                });
+
+            var builder = new StubbleBuilder()
+                .Configure(conf =>
+                {
+                    conf.AddHelpers(helpers);
+                })
+                .Build();
+
+            var tmpl = @"{{DefaultMe Value ""I'm Defaulted""}}";
+
+            var res = builder.Render(tmpl, new { Value = "" });
+
+            Assert.Equal("I'm Defaulted", res);
+        }
+
+        [Fact]
+        public void HelpersShouldBeAbleToHaveStaticParameterWithEscapedQuotes()
+        {
+            var helpers = new Helpers()
+                .Register<string, string>("DefaultMe", (context, str, @default) =>
+                {
+                    return string.IsNullOrEmpty(str) ? @default : str;
+                });
+
+            var builder = new StubbleBuilder()
+                .Configure(conf =>
+                {
+                    conf.AddHelpers(helpers);
+                })
+                .Build();
+
+            var tmpl = @"{{DefaultMe Value 'I\'m Defaulted'}}";
+
+            var res = builder.Render(tmpl, new { Value = "" });
+
+            Assert.Equal("I'm Defaulted", res);
+        }
     }
 }

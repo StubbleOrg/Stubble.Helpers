@@ -31,7 +31,7 @@ namespace Stubble.Helpers
                     for (var i = 0; i < args.Length; i++)
                     {
                         var lookup = context.Lookup(args[i]);
-                        lookup = TryConvertTypeIfRequired(lookup, argumentTypes[i + 1]);
+                        lookup = TryConvertTypeIfRequired(lookup, args[i], argumentTypes[i + 1]);
 
                         if (lookup is null)
                         {
@@ -56,28 +56,29 @@ namespace Stubble.Helpers
             return Task.CompletedTask;
         }
 
-        public static object TryConvertTypeIfRequired(object lookup, Type type)
+        public static object TryConvertTypeIfRequired(object value, string arg, Type type)
         {
-            if (lookup is null)
+            if (value is null)
             {
-                return null;
+                // When lookup is null we should use the argument as passed
+                value = arg;
             }
 
-            var lookupType = lookup.GetType();
+            var lookupType = value.GetType();
 
             if (lookupType == type)
             {
-                return lookup;
+                return value;
             }
 
             if (type.IsAssignableFrom(lookupType))
             {
-                return lookup;
+                return value;
             }
 
             try
             {
-                return Convert.ChangeType(lookup, type);
+                return Convert.ChangeType(value, type);
             }
             catch
             {
