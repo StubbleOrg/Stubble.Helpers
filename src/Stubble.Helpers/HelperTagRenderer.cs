@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Stubble.Core.Contexts;
 using Stubble.Core.Renderers.StringRenderer;
@@ -36,11 +37,18 @@ namespace Stubble.Helpers
                             return;
                         }
 
-                        if (argumentTypes[i + 1] == lookup.GetType())
+                        if (argumentTypes[i + 1].IsAssignableFrom(lookup.GetType()))
                         {
                             arr[i + 1] = lookup;
+                            continue;
                         }
-                        else
+
+                        try
+                        {
+                            var convertedType = Convert.ChangeType(lookup, argumentTypes[i + 1]);
+                            arr[i + 1] = convertedType;
+                        }
+                        catch
                         {
                             return;
                         }
