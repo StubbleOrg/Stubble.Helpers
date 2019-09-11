@@ -26,7 +26,7 @@ namespace Stubble.Helpers.Test
             var token = new HelperToken
             {
                 Name = "MyHelper",
-                Args = Array.Empty<string>()
+                Args = ImmutableArray<HelperArgument>.Empty
             };
 
             var context = new Context(new { Count = 10 }, settings, renderSettings);
@@ -60,7 +60,7 @@ namespace Stubble.Helpers.Test
             var token = new HelperToken
             {
                 Name = "MyHelper",
-                Args = new[] { "Count" }
+                Args = ImmutableArray.Create(new HelperArgument("Count"))
             };
 
             var context = new Context(new { Count = 10 }, settings, renderSettings);
@@ -94,7 +94,7 @@ namespace Stubble.Helpers.Test
             var token = new HelperToken
             {
                 Name = "MyHelper",
-                Args = new[] { "Count", "Count2" }
+                Args = ImmutableArray.Create(new HelperArgument("Count"), new HelperArgument("Count2"))
             };
 
             var context = new Context(new { Count = 10 }, settings, renderSettings)
@@ -129,7 +129,7 @@ namespace Stubble.Helpers.Test
             var token = new HelperToken
             {
                 Name = "MyHelper",
-                Args = new[] { "Count", "Count2" }
+                Args = ImmutableArray.Create(new HelperArgument("Count"), new HelperArgument("Count2"))
             };
 
             var context = new Context(new { Count = 10 }, settings, renderSettings)
@@ -164,7 +164,7 @@ namespace Stubble.Helpers.Test
             var token = new HelperToken
             {
                 Name = "MyHelper",
-                Args = new[] { "Count1" }
+                Args = ImmutableArray.Create(new HelperArgument("Count1"))
             };
 
             var context = new Context(new { Count = 10 }, settings, renderSettings);
@@ -198,7 +198,7 @@ namespace Stubble.Helpers.Test
             var token = new HelperToken
             {
                 Name = "MyHelper",
-                Args = new[] { "Count" }
+                Args = ImmutableArray.Create(new HelperArgument("Count"))
             };
 
             var context = new Context(new { Count = "wrong-type" }, settings, renderSettings);
@@ -232,7 +232,7 @@ namespace Stubble.Helpers.Test
             var token = new HelperToken
             {
                 Name = "MyHelper",
-                Args = new[] { "Count" }
+                Args = ImmutableArray.Create(new HelperArgument("Count"))
             };
 
             var context = new Context(new { Count = "10" }, settings, renderSettings);
@@ -271,7 +271,7 @@ namespace Stubble.Helpers.Test
             var token = new HelperToken
             {
                 Name = "MyHelper",
-                Args = new[] { "Count" }
+                Args = ImmutableArray.Create(new HelperArgument("Count"))
             };
 
             var context = new Context(new { Count = new Dictionary<object, object> { { "value", "10" } } }, settings, renderSettings);
@@ -305,7 +305,7 @@ namespace Stubble.Helpers.Test
             var token = new HelperToken
             {
                 Name = "MyHelper",
-                Args = Array.Empty<string>()
+                Args = ImmutableArray<HelperArgument>.Empty
             };
 
             var context = new Context(new { Count = 10 }, settings, renderSettings);

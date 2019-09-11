@@ -79,10 +79,10 @@ namespace Stubble.Helpers
             return true;
         }
 
-        private string[] ParseArguments(StringSlice slice)
+        private ImmutableArray<HelperArgument> ParseArguments(StringSlice slice)
         {
             slice.TrimStart();
-            var args = new List<string>();
+            var args = ImmutableArray.CreateBuilder<HelperArgument>();
 
             while (!slice.IsEmpty)
             {
@@ -105,7 +105,7 @@ namespace Stubble.Helpers
                         slice.NextChar();
                     }
 
-                    args.Add(slice.Text.Substring(start, slice.Start - start));
+                    args.Add(new HelperArgument(slice.Text.Substring(start, slice.Start - start)));
                 }
 
                 while (slice.CurrentChar.IsWhitespace())
@@ -114,10 +114,10 @@ namespace Stubble.Helpers
                 }
             }
 
-            return args.ToArray();
+            return args.ToImmutable();
         }
 
-        private static string ParseQuotedString(ref StringSlice slice)
+        private static HelperArgument ParseQuotedString(ref StringSlice slice)
         {
             var startQuote = slice.CurrentChar;
             slice.NextChar();
@@ -134,7 +134,7 @@ namespace Stubble.Helpers
             var end = slice.Start;
             slice.NextChar();
 
-            return Regex.Unescape(slice.Text.Substring(st, end - st));
+            return new HelperArgument(Regex.Unescape(slice.Text.Substring(st, end - st)), false);
         }
     }
 }

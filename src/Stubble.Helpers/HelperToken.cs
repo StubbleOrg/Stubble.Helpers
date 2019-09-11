@@ -1,4 +1,4 @@
-﻿using Stubble.Core.Imported;
+﻿using System.Collections.Immutable;
 using Stubble.Core.Tokens;
 
 namespace Stubble.Helpers
@@ -6,14 +6,16 @@ namespace Stubble.Helpers
     public class HelperToken : InlineToken<HelperToken>, INonSpace
     {
         public string Name { get; set; }
-        public string[] Args { get; set; }
+
+        public ImmutableArray<HelperArgument> Args { get; set; }
 
         public override bool Equals(HelperToken other) =>
-            (other.TagStartPosition, other.TagEndPosition, other.ContentStartPosition, other.ContentEndPosition, other.IsClosed)
+            other is object
+            && (other.TagStartPosition, other.TagEndPosition, other.ContentStartPosition, other.ContentEndPosition, other.IsClosed)
                 == (TagStartPosition, TagEndPosition, ContentStartPosition, ContentEndPosition, IsClosed)
             && other.Content.Equals(Content)
-            && other.Name.Equals(Name)
-            && other.Args.Equals(Args);
+            && other.Name.Equals(Name, System.StringComparison.OrdinalIgnoreCase)
+            && CompareArgArrays(Args, other.Args);
 
         public override bool Equals(object obj)
             => obj is HelperToken a && Equals(a);

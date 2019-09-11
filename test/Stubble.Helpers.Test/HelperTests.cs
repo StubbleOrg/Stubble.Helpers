@@ -208,5 +208,30 @@ namespace Stubble.Helpers.Test
 
             Assert.Equal("I'm Defaulted", res);
         }
+
+        [Theory]
+        [InlineData("'Count'")]
+        [InlineData("\"Count\"")]
+        public void ItShouldCallHelperWhenExistsStaticAndDynamicVariable(string staticValue)
+        {
+            var helpers = new Helpers()
+                .Register<string, int>("MyHelper", (context, staticVariable, dynamicVariable) =>
+                {
+                    return $"<{staticVariable}#{dynamicVariable}>";
+                });
+
+            var builder = new StubbleBuilder()
+                .Configure(conf =>
+                {
+                    conf.AddHelpers(helpers);
+                })
+                .Build();
+
+            var tmpl = @"{{MyHelper " + staticValue + " Count }}";
+
+            var res = builder.Render(tmpl, new { Count = 10 });
+
+            Assert.Equal($"<Count#10>", res);
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Threading.Tasks;
 using Stubble.Core.Contexts;
 using Stubble.Core.Renderers.StringRenderer;
@@ -30,15 +31,18 @@ namespace Stubble.Helpers
 
                     for (var i = 0; i < args.Length; i++)
                     {
-                        var lookup = context.Lookup(args[i]);
-                        lookup = TryConvertTypeIfRequired(lookup, args[i], argumentTypes[i + 1]);
+                        var arg = args[i].ShouldAttemptContextLoad
+                            ? context.Lookup(args[i].Value)
+                            : args[i].Value;
 
-                        if (lookup is null)
+                        arg = TryConvertTypeIfRequired(arg, args[i].Value, argumentTypes[i + 1]);
+
+                        if (arg is null)
                         {
                             return;
                         }
 
-                        arr[i + 1] = lookup;
+                        arr[i + 1] = arg;
                     }
 
                     var result = helper.Delegate.Method.Invoke(helper.Delegate.Target, arr);
@@ -56,7 +60,7 @@ namespace Stubble.Helpers
             return Task.CompletedTask;
         }
 
-        public static object TryConvertTypeIfRequired(object value, string arg, Type type)
+        private static object TryConvertTypeIfRequired(object value, string arg, Type type)
         {
             if (value is null)
             {
@@ -78,7 +82,7 @@ namespace Stubble.Helpers
 
             try
             {
-                return Convert.ChangeType(value, type);
+                return Convert.ChangeType(value, type, CultureInfo.InvariantCulture);
             }
             catch
             {
