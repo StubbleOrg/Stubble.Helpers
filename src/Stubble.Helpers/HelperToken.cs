@@ -15,7 +15,7 @@ namespace Stubble.Helpers
                 == (TagStartPosition, TagEndPosition, ContentStartPosition, ContentEndPosition, IsClosed)
             && other.Content.Equals(Content)
             && other.Name.Equals(Name, System.StringComparison.OrdinalIgnoreCase)
-            && CompareArgArrays(Args, other.Args);
+            && CompareHelper.CompareImmutableArraysWithEquatable(Args, other.Args);
 
         public override bool Equals(object obj)
             => obj is HelperToken a && Equals(a);

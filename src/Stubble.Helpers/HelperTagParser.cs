@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using Stubble.Core.Exceptions;
 using Stubble.Core.Imported;
@@ -53,14 +54,6 @@ namespace Stubble.Helpers
             args.TrimEnd();
             var contentEnd = args.End + 1;
 
-            var tag = new HelperToken
-            {
-                TagStartPosition = tagStart,
-                ContentStartPosition = nameStart,
-                Name = name,
-                IsClosed = true
-            };
-
             if (!slice.Match(processor.CurrentTags.EndTag))
             {
                 throw new StubbleException($"Unclosed Tag at {slice.Start.ToString()}");
@@ -68,9 +61,16 @@ namespace Stubble.Helpers
 
             var argsList = ParseArguments(new StringSlice(args.Text, args.Start, args.End));
 
-            tag.Args = argsList;
-            tag.ContentEndPosition = contentEnd;
-            tag.TagEndPosition = slice.Start + processor.CurrentTags.EndTag.Length;
+            var tag = new HelperToken
+            {
+                TagStartPosition = tagStart,
+                ContentStartPosition = nameStart,
+                Name = name,
+                Args = argsList,
+                ContentEndPosition = contentEnd,
+                TagEndPosition = slice.Start + processor.CurrentTags.EndTag.Length,
+                IsClosed = true
+            };
             slice.Start += processor.CurrentTags.EndTag.Length;
 
             processor.CurrentToken = tag;

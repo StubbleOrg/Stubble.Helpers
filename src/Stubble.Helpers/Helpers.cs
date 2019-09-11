@@ -9,7 +9,7 @@ namespace Stubble.Helpers
         private readonly Dictionary<string, HelperRef> _helpers
             = new Dictionary<string, HelperRef>();
 
-        public ImmutableDictionary<string, HelperRef> HelperMap => _helpers.ToImmutableDictionary();
+        public ImmutableDictionary<string, HelperRef> HelperMap => _helpers.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
 
         public Helpers Register(string name, Func<HelperContext, string> func) => Register(name, (Delegate)func);
         public Helpers Register<T2>(string name, Func<HelperContext, T2, string> func) => Register(name, (Delegate)func);
