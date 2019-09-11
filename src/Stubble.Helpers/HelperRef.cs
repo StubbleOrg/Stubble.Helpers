@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 
 namespace Stubble.Helpers
 {
-    public struct HelperRef : IEquatable<HelperRef>
+    public readonly struct HelperRef : IEquatable<HelperRef>
     {
         public HelperRef(Delegate @delegate)
         {
@@ -19,8 +19,9 @@ namespace Stubble.Helpers
             ArgumentTypes = builder.ToImmutable();
         }
 
-        public Delegate Delegate;
-        public ImmutableArray<Type> ArgumentTypes;
+        public Delegate Delegate { get; }
+
+        public ImmutableArray<Type> ArgumentTypes { get; }
 
         public override bool Equals(object obj)
         {
@@ -30,7 +31,7 @@ namespace Stubble.Helpers
         public bool Equals(HelperRef other)
         {
             return EqualityComparer<Delegate>.Default.Equals(Delegate, other.Delegate) &&
-                   ArgumentTypes.Equals(other.ArgumentTypes);
+                   CompareHelper.CompareImmutableArrays(ArgumentTypes, other.ArgumentTypes);
         }
 
         public override int GetHashCode()

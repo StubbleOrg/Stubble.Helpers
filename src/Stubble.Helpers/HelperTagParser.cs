@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using Stubble.Core.Exceptions;
 using Stubble.Core.Imported;
@@ -53,14 +54,6 @@ namespace Stubble.Helpers
             args.TrimEnd();
             var contentEnd = args.End + 1;
 
-            var tag = new HelperToken
-            {
-                TagStartPosition = tagStart,
-                ContentStartPosition = nameStart,
-                Name = name,
-                IsClosed = true
-            };
-
             if (!slice.Match(processor.CurrentTags.EndTag))
             {
                 throw new StubbleException($"Unclosed Tag at {slice.Start.ToString()}");
@@ -68,9 +61,16 @@ namespace Stubble.Helpers
 
             var argsList = ParseArguments(new StringSlice(args.Text, args.Start, args.End));
 
-            tag.Args = argsList;
-            tag.ContentEndPosition = contentEnd;
-            tag.TagEndPosition = slice.Start + processor.CurrentTags.EndTag.Length;
+            var tag = new HelperToken
+            {
+                TagStartPosition = tagStart,
+                ContentStartPosition = nameStart,
+                Name = name,
+                Args = argsList,
+                ContentEndPosition = contentEnd,
+                TagEndPosition = slice.Start + processor.CurrentTags.EndTag.Length,
+                IsClosed = true
+            };
             slice.Start += processor.CurrentTags.EndTag.Length;
 
             processor.CurrentToken = tag;
@@ -79,10 +79,10 @@ namespace Stubble.Helpers
             return true;
         }
 
-        private string[] ParseArguments(StringSlice slice)
+        private ImmutableArray<HelperArgument> ParseArguments(StringSlice slice)
         {
             slice.TrimStart();
-            var args = new List<string>();
+            var args = ImmutableArray.CreateBuilder<HelperArgument>();
 
             while (!slice.IsEmpty)
             {
@@ -105,7 +105,7 @@ namespace Stubble.Helpers
                         slice.NextChar();
                     }
 
-                    args.Add(slice.Text.Substring(start, slice.Start - start));
+                    args.Add(new HelperArgument(slice.Text.Substring(start, slice.Start - start)));
                 }
 
                 while (slice.CurrentChar.IsWhitespace())
@@ -114,10 +114,10 @@ namespace Stubble.Helpers
                 }
             }
 
-            return args.ToArray();
+            return args.ToImmutable();
         }
 
-        private static string ParseQuotedString(ref StringSlice slice)
+        private static HelperArgument ParseQuotedString(ref StringSlice slice)
         {
             var startQuote = slice.CurrentChar;
             slice.NextChar();
@@ -134,7 +134,7 @@ namespace Stubble.Helpers
             var end = slice.Start;
             slice.NextChar();
 
-            return Regex.Unescape(slice.Text.Substring(st, end - st));
+            return new HelperArgument(Regex.Unescape(slice.Text.Substring(st, end - st)), false);
         }
     }
 }

@@ -38,7 +38,8 @@ namespace Stubble.Helpers.Test
             Assert.Single(tokens.Children);
             var helperToken = Assert.IsType<HelperToken>(tokens.Children[0]);
             Assert.Equal("MyHelper", helperToken.Name.ToString());
-            Assert.Equal("MyArgument", helperToken.Args[0]);
+            Assert.Equal("MyArgument", helperToken.Args[0].Value);
+            Assert.True(helperToken.Args[0].ShouldAttemptContextLoad);
         }
 
         [Fact]
@@ -52,8 +53,10 @@ namespace Stubble.Helpers.Test
             Assert.Single(tokens.Children);
             var helperToken = Assert.IsType<HelperToken>(tokens.Children[0]);
             Assert.Equal("MyHelper", helperToken.Name.ToString());
-            Assert.Equal("MyArgument1", helperToken.Args[0]);
-            Assert.Equal("MyArgument2", helperToken.Args[1]);
+            Assert.Equal("MyArgument1", helperToken.Args[0].Value);
+            Assert.True(helperToken.Args[0].ShouldAttemptContextLoad);
+            Assert.Equal("MyArgument2", helperToken.Args[1].Value);
+            Assert.True(helperToken.Args[0].ShouldAttemptContextLoad);
         }
 
         [Fact]
@@ -79,8 +82,10 @@ namespace Stubble.Helpers.Test
             Assert.Single(tokens.Children);
             var helperToken = Assert.IsType<HelperToken>(tokens.Children[0]);
             Assert.Equal("MyHelper", helperToken.Name.ToString());
-            Assert.Equal("10", helperToken.Args[0]);
-            Assert.Equal("MyArgument2", helperToken.Args[1]);
+            Assert.Equal("10", helperToken.Args[0].Value);
+            Assert.True(helperToken.Args[0].ShouldAttemptContextLoad);
+            Assert.Equal("MyArgument2", helperToken.Args[1].Value);
+            Assert.True(helperToken.Args[1].ShouldAttemptContextLoad);
         }
 
         [Theory]
@@ -101,7 +106,8 @@ namespace Stubble.Helpers.Test
             Assert.Single(tokens.Children);
             var helperToken = Assert.IsType<HelperToken>(tokens.Children[0]);
             Assert.Equal("MyHelper", helperToken.Name.ToString());
-            Assert.Equal(argumentValue, helperToken.Args[0]);
+            Assert.Equal(argumentValue, helperToken.Args[0].Value);
+            Assert.False(helperToken.Args[0].ShouldAttemptContextLoad);
         }
 
         [Theory]
@@ -122,7 +128,8 @@ namespace Stubble.Helpers.Test
             Assert.Single(tokens.Children);
             var helperToken = Assert.IsType<HelperToken>(tokens.Children[0]);
             Assert.Equal("MyHelper", helperToken.Name.ToString());
-            Assert.Equal(argumentValue, helperToken.Args[0]);
+            Assert.Equal(argumentValue, helperToken.Args[0].Value);
+            Assert.False(helperToken.Args[0].ShouldAttemptContextLoad);
         }
     }
 }
