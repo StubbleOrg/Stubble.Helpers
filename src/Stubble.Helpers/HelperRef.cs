@@ -8,7 +8,7 @@ namespace Stubble.Helpers
     {
         public HelperRef(Delegate @delegate)
         {
-            Delegate = @delegate;
+            Delegate = @delegate ?? throw new ArgumentNullException(nameof(@delegate));
 
             var @params = @delegate.Method.GetParameters();
             var builder = ImmutableArray.CreateBuilder<Type>(@params.Length);
@@ -43,6 +43,16 @@ namespace Stubble.Helpers
                 hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(type);
             }
             return hashCode;
+        }
+
+        public static bool operator ==(HelperRef left, HelperRef right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(HelperRef left, HelperRef right)
+        {
+            return !(left == right);
         }
     }
 }

@@ -18,6 +18,21 @@ namespace Stubble.Helpers
 
         protected override void Write(StringRender renderer, HelperToken obj, Context context)
         {
+            if (renderer is null)
+            {
+                throw new ArgumentNullException(nameof(renderer));
+            }
+
+            if (obj is null)
+            {
+                throw new ArgumentNullException(nameof(obj));
+            }
+
+            if (context is null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             if (_helperCache.TryGetValue(obj.Name, out var helper))
             {
                 var helperContext = new HelperContext(context);
@@ -84,7 +99,9 @@ namespace Stubble.Helpers
             {
                 return Convert.ChangeType(value, type, CultureInfo.InvariantCulture);
             }
+#pragma warning disable CA1031 // Do not catch general exception types
             catch
+#pragma warning restore CA1031 // Do not catch general exception types
             {
             }
 
