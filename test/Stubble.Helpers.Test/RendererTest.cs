@@ -256,8 +256,7 @@ namespace Stubble.Helpers.Test
 
             var helper = new Func<HelperContext, object, string>((helperContext, src) =>
             {
-                var dic = src as IDictionary<object, object>;
-                if (dic == null)
+                if (!(src is IDictionary<object, object> dic))
                 {
                     return string.Empty;
                 }

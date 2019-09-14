@@ -7,11 +7,11 @@ namespace Stubble.Helpers
 {
     public class HelperContext
     {
-        private readonly Context context;
+        private readonly Context _context;
 
         public HelperContext(Context context)
         {
-            this.context = context;
+            _context = context;
         }
 
         /// <summary>
@@ -32,9 +32,9 @@ namespace Stubble.Helpers
         /// <exception cref="InvalidCastException">If the type <typeparamref name="T"/> does not match the found type</exception>
         /// <returns>The value if found or null if not</returns>
         public T Lookup<T>(string name)
-            => (T)context.Lookup(name);
+            => (T)_context.Lookup(name);
 
         public bool IsTruthyValue(object value)
-            => context.IsTruthyValue(value);
+            => _context.IsTruthyValue(value);
     }
 }

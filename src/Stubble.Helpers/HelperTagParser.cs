@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Stubble.Core.Exceptions;
 using Stubble.Core.Imported;
@@ -12,6 +12,11 @@ namespace Stubble.Helpers
     {
         public override bool Match(Processor processor, ref StringSlice slice)
         {
+            if (processor is null)
+            {
+                throw new System.ArgumentNullException(nameof(processor));
+            }
+
             var tagStart = slice.Start - processor.CurrentTags.StartTag.Length;
             var index = slice.Start;
 
@@ -56,7 +61,7 @@ namespace Stubble.Helpers
 
             if (!slice.Match(processor.CurrentTags.EndTag))
             {
-                throw new StubbleException($"Unclosed Tag at {slice.Start.ToString()}");
+                throw new StubbleException($"Unclosed Tag at {slice.Start.ToString(CultureInfo.InvariantCulture)}");
             }
 
             var argsList = ParseArguments(new StringSlice(args.Text, args.Start, args.End));
