@@ -21,7 +21,7 @@ namespace Stubble.Helpers
             }
 
             builder.ConfigureParserPipeline(pipelineBuilder => pipelineBuilder
-                .AddBefore<InterpolationTagParser>(new HelperTagParser()));
+                .AddBefore<InterpolationTagParser>(new HelperTagParser(helpers.HelperMap)));
 
             builder.TokenRenderers.Add(new HelperTagRenderer(helpers.HelperMap));
 

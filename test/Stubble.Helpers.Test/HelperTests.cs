@@ -233,5 +233,20 @@ namespace Stubble.Helpers.Test
 
             Assert.Equal($"<Count#10>", res);
         }
+
+        [Fact]
+        public void ItShouldAllowRegisteredHelpersWithoutArguments()
+        {
+            var helpers = new Helpers()
+                .Register("PrintListWithComma", (context) => string.Join(", ", context.Lookup<int[]>("List")));
+
+            var builder = new StubbleBuilder()
+                .Configure(conf => conf.AddHelpers(helpers))
+                .Build();
+
+            var res = builder.Render("List: {{PrintListWithComma}}", new { List = new[] { 1, 2, 3 } });
+
+            Assert.Equal("List: 1, 2, 3", res);
+        }
     }
 }

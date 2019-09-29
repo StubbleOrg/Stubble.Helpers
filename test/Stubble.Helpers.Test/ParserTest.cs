@@ -1,4 +1,5 @@
-﻿using Stubble.Core.Builders;
+﻿using System.Collections.Immutable;
+using Stubble.Core.Builders;
 using Stubble.Core.Parser;
 using Stubble.Core.Parser.TokenParsers;
 using Stubble.Core.Tokens;
@@ -8,30 +9,48 @@ namespace Stubble.Helpers.Test
 {
     public class ParserTest
     {
-        public ParserPipeline BuildHelperPipeline()
+        public ParserPipeline BuildHelperPipeline(Helpers helpers)
         {
             var builder = new ParserPipelineBuilder();
-            builder.AddBefore<InterpolationTagParser>(new HelperTagParser());
+            builder.AddBefore<InterpolationTagParser>(new HelperTagParser(helpers.HelperMap));
             return builder.Build();
         }
 
         [Fact]
-        public void OnlyParsesHelpersWithArguments()
+        public void ItDoesntParseUnregisteredHelpers()
         {
             var parser = new InstanceMustacheParser();
-            var pipeline = BuildHelperPipeline();
+            var helpers = new Helpers()
+                .Register("MyHelper", ctx => "Foo");
+            var pipeline = BuildHelperPipeline(helpers);
 
-            var tokens = parser.Parse("{{MyHelper}}", pipeline: pipeline);
+            var tokens = parser.Parse("{{MyHelper2}}", pipeline: pipeline);
 
             Assert.Single(tokens.Children);
             Assert.IsType<InterpolationToken>(tokens.Children[0]);
         }
 
         [Fact]
+        public void ItParsesHelpersWithoutArguments()
+        {
+            var parser = new InstanceMustacheParser();
+            var helpers = new Helpers()
+                .Register("MyHelper", ctx => "Foo");
+            var pipeline = BuildHelperPipeline(helpers);
+
+            var tokens = parser.Parse("{{MyHelper}}", pipeline: pipeline);
+
+            Assert.Single(tokens.Children);
+            Assert.IsType<HelperToken>(tokens.Children[0]);
+        }
+
+        [Fact]
         public void ItParsesHelpersWithArgument()
         {
             var parser = new InstanceMustacheParser();
-            var pipeline = BuildHelperPipeline();
+            var helpers = new Helpers()
+                .Register<int>("MyHelper", (ctx, arg) => "Foo");
+            var pipeline = BuildHelperPipeline(helpers);
 
             var tokens = parser.Parse("{{MyHelper MyArgument}}", pipeline: pipeline);
 
@@ -46,7 +65,9 @@ namespace Stubble.Helpers.Test
         public void ItParsesHelpersWithMultipleArguments()
         {
             var parser = new InstanceMustacheParser();
-            var pipeline = BuildHelperPipeline();
+            var helpers = new Helpers()
+                .Register<int, int>("MyHelper", (ctx, arg1, arg2) => "Foo");
+            var pipeline = BuildHelperPipeline(helpers);
 
             var tokens = parser.Parse("{{MyHelper MyArgument1 MyArgument2}}", pipeline: pipeline);
 
@@ -63,7 +84,7 @@ namespace Stubble.Helpers.Test
         public void OnlyParsesHelperSectionsWithArguments()
         {
             var parser = new InstanceMustacheParser();
-            var pipeline = BuildHelperPipeline();
+            var pipeline = BuildHelperPipeline(new Helpers());
 
             var tokens = parser.Parse("{{#MyHelper}}{{/MyHelper}}", pipeline: pipeline);
 
@@ -75,7 +96,9 @@ namespace Stubble.Helpers.Test
         public void ItShouldBeAbleToParseStaticParameters()
         {
             var parser = new InstanceMustacheParser();
-            var pipeline = BuildHelperPipeline();
+            var helpers = new Helpers()
+                .Register<int, int>("MyHelper", (ctx, arg1, arg2) => "Foo");
+            var pipeline = BuildHelperPipeline(helpers);
 
             var tokens = parser.Parse("{{MyHelper 10 MyArgument2}}", pipeline: pipeline);
 
@@ -99,7 +122,9 @@ namespace Stubble.Helpers.Test
                 .Replace("\'", string.Empty);
 
             var parser = new InstanceMustacheParser();
-            var pipeline = BuildHelperPipeline();
+            var helpers = new Helpers()
+                .Register<string>("MyHelper", (ctx, arg) => "Foo");
+            var pipeline = BuildHelperPipeline(helpers);
 
             var tokens = parser.Parse($"{{{{MyHelper {argument}}}}}", pipeline: pipeline);
 
@@ -121,7 +146,9 @@ namespace Stubble.Helpers.Test
                 .Replace("\'", string.Empty);
 
             var parser = new InstanceMustacheParser();
-            var pipeline = BuildHelperPipeline();
+            var helpers = new Helpers()
+                .Register<string>("MyHelper", (ctx, arg) => "Foo");
+            var pipeline = BuildHelperPipeline(helpers);
 
             var tokens = parser.Parse($"{{{{MyHelper {argument}}}}}", pipeline: pipeline);
 
