@@ -29,7 +29,7 @@ var builder = new StubbleBuilder()
 
 var res = builder.Render("List: {{PrintListWithComma}}", new { List = new[] { 1, 2, 3 } });
 
-Assert.Equal("1, 2, 3", res);
+Assert.Equal("List: 1, 2, 3", res);
 ```
 
 You can also have static arguments in your template that will be parsed into your helper. There are some caveats to this which i'll note below the example:

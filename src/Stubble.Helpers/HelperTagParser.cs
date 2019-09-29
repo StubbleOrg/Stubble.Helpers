@@ -10,6 +10,13 @@ namespace Stubble.Helpers
 {
     public class HelperTagParser : InlineParser
     {
+        private readonly ImmutableDictionary<string, HelperRef> _helperMap;
+
+        public HelperTagParser(ImmutableDictionary<string, HelperRef> helperMap)
+        {
+            _helperMap = helperMap;
+        }
+
         public override bool Match(Processor processor, ref StringSlice slice)
         {
             if (processor is null)
@@ -41,30 +48,43 @@ namespace Stubble.Helpers
                 index++;
             }
 
-            // If we're at an end tag then it's not a helper
-            if (slice.Match(processor.CurrentTags.EndTag, index - slice.Start))
+            if (!_helperMap.TryGetValue(name, out var helperRef))
             {
                 return false;
             }
 
-            var argsStart = index;
-            slice.Start = index;
-
-            while (!slice.IsEmpty && !slice.Match(processor.CurrentTags.EndTag))
+            int contentEnd;
+            var argsList = ImmutableArray<HelperArgument>.Empty;
+            if (helperRef.ArgumentTypes.Length > 1)
             {
-                slice.NextChar();
-            }
+                var argsStart = index;
+                slice.Start = index;
 
-            var args = new StringSlice(slice.Text, argsStart, slice.Start - 1);
-            args.TrimEnd();
-            var contentEnd = args.End + 1;
+                while (!slice.IsEmpty && !slice.Match(processor.CurrentTags.EndTag))
+                {
+                    slice.NextChar();
+                }
+
+                var args = new StringSlice(slice.Text, argsStart, slice.Start - 1);
+                args.TrimEnd();
+                contentEnd = args.End + 1;
+
+                argsList = ParseArguments(new StringSlice(args.Text, args.Start, args.End));
+            } 
+            else
+            {
+                while (!slice.IsEmpty && !slice.Match(processor.CurrentTags.EndTag))
+                {
+                    slice.NextChar();
+                }
+
+                contentEnd = slice.Start;
+            }
 
             if (!slice.Match(processor.CurrentTags.EndTag))
             {
                 throw new StubbleException($"Unclosed Tag at {slice.Start.ToString(CultureInfo.InvariantCulture)}");
             }
-
-            var argsList = ParseArguments(new StringSlice(args.Text, args.Start, args.End));
 
             var tag = new HelperToken
             {
