@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.IO;
 using Stubble.Core.Contexts;
 using Stubble.Core.Renderers.StringRenderer;
@@ -314,6 +315,77 @@ namespace Stubble.Helpers.Test
             var res = writer.ToString();
 
             Assert.Equal("<10>", res);
+        }
+
+        [Fact]
+        public void ItShouldApplyTheCultureOfTheRenderer()
+        {
+            var writer = new StringWriter();
+            var settings = new RendererSettingsBuilder().BuildSettings();
+            var renderSettings = new RenderSettings
+            {
+                CultureInfo = new CultureInfo("ru-RU")
+            };
+            var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+
+            var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
+
+            var helper = new Func<HelperContext, decimal>((helperContext) =>
+            {
+                return helperContext.Lookup<decimal>("Count");
+            });
+
+            helpers.Add("MyHelper", new HelperRef(helper));
+
+            var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
+
+            var token = new HelperToken
+            {
+                Name = "MyHelper",
+                Args = ImmutableArray<HelperArgument>.Empty
+            };
+
+            var context = new Context(new { Count = 1.21m }, settings, renderSettings);
+
+            tagRenderer.Write(stringRenderer, token, context);
+
+            var res = writer.ToString();
+
+            Assert.Equal("1,21", res);
+        }
+
+        [Fact]
+        public void ItShouldHandleNullReturnFromHelper()
+        {
+            var writer = new StringWriter();
+            var settings = new RendererSettingsBuilder().BuildSettings();
+            var renderSettings = new RenderSettings();
+            var stringRenderer = new StringRender(writer, settings.RendererPipeline);
+
+            var helpers = ImmutableDictionary.CreateBuilder<string, HelperRef>();
+
+            var helper = new Func<HelperContext, object>((helperContext) =>
+            {
+                return null;
+            });
+
+            helpers.Add("MyHelper", new HelperRef(helper));
+
+            var tagRenderer = new HelperTagRenderer(helpers.ToImmutable());
+
+            var token = new HelperToken
+            {
+                Name = "MyHelper",
+                Args = ImmutableArray<HelperArgument>.Empty
+            };
+
+            var context = new Context(new { Count = 1.21m }, settings, renderSettings);
+
+            tagRenderer.Write(stringRenderer, token, context);
+
+            var res = writer.ToString();
+
+            Assert.Equal("", res);
         }
     }
 }

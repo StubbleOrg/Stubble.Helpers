@@ -35,6 +35,32 @@ namespace Stubble.Helpers.Test
         }
 
         [Fact]
+        public void HelpersShouldBeAbleToUseRendererContext()
+        {
+            var helpers = new Helpers()
+                .Register<decimal>("FormatCurrency", (context, count) =>
+                {
+                    return count.ToString("C", context.RenderSettings.CultureInfo);
+                });
+
+            var builder = new StubbleBuilder()
+                .Configure(conf =>
+                {
+                    conf.AddHelpers(helpers);
+                })
+                .Build();
+
+            var tmpl = @"{{FormatCurrency Count}}, {{FormatCurrency Count2}}";
+
+            var res = builder.Render(tmpl, new { Count = 10m, Count2 = 100.26m }, new Core.Settings.RenderSettings
+            {
+                CultureInfo = new CultureInfo("en-GB")
+            });
+
+            Assert.Equal("£10.00, £100.26", res);
+        }
+
+        [Fact]
         [UseCulture("en-GB")]
         public void StubbleShouldContinueWorkingAsNormal()
         {

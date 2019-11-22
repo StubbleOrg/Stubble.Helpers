@@ -65,6 +65,10 @@ namespace Stubble.Helpers
                     {
                         renderer.Write(str);
                     }
+                    else if (result is object)
+                    {
+                        renderer.Write(Convert.ToString(result, context.RenderSettings.CultureInfo));
+                    }
                 }
             }
         }
