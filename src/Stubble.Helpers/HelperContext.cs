@@ -11,18 +11,21 @@ namespace Stubble.Helpers
 
         public HelperContext(Context context)
         {
+            if (context is null) throw new ArgumentNullException(nameof(context));
+
             _context = context;
+            RendererSettings = new HelperRendererSettings(_context.RendererSettings);
         }
 
         /// <summary>
         /// Gets the render settings for the context
         /// </summary>
-        public RenderSettings RenderSettings { get;}
+        public RenderSettings RenderSettings => _context.RenderSettings;
 
         /// <summary>
-        /// Gets the registry for the context
+        /// Gets the renderer settings for the context
         /// </summary>
-        public RendererSettings RendererSettings { get; }
+        public HelperRendererSettings RendererSettings { get; }
 
         /// <summary>
         /// Looks up a value by name from the context
