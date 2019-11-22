@@ -1,3 +1,7 @@
+#tool nuget:?package=Codecov&version=1.5.0
+#addin nuget:?package=Cake.Codecov&version=0.6.0
+#addin nuget:?package=Cake.Coverlet&version=2.3.4
+
 ///////////////////////////////////////////////////////////////////////////////
 // ARGUMENTS
 ///////////////////////////////////////////////////////////////////////////////
@@ -116,16 +120,14 @@ Task("Test")
     .IsDependentOn("Build")
     .Does<MyBuildData>((data) =>
 {
-    DotNetCoreTest("./test/Stubble.Helpers.Test/", data.TestSettings);
+    var coverletSettings = new CoverletSettings {
+        CollectCoverage = true,
+        CoverletOutputFormat = CoverletOutputFormat.opencover | CoverletOutputFormat.cobertura,
+        CoverletOutputDirectory = data.CoverageDirectory,
+        CoverletOutputName = $"results-{DateTime.UtcNow:dd-MM-yyyy-HH-mm-ss-FFF}"
+    };
 
-    if (AppVeyor.IsRunningOnAppVeyor)
-    {
-        foreach(var file in GetFiles((string)data.TestResultsDirectory + "/*"))
-        {
-            AppVeyor.UploadTestResults(file, AppVeyorTestResultsType.MSTest);
-            AppVeyor.UploadArtifact(file);
-        }
-    }
+    DotNetCoreTest("./test/Stubble.Helpers.Test/", data.TestSettings, coverletSettings);
 });
 
 Task("Pack")
@@ -136,10 +138,27 @@ Task("Pack")
     DotNetCorePack("./src/Stubble.Helpers/Stubble.Helpers.csproj", data.PackSettings);
 });
 
-Task("Default")
-   .IsDependentOn("Pack");
+Task("CodeCov")
+    .IsDependentOn("Pack")
+    .WithCriteria(BuildSystem.IsRunningOnAzurePipelinesHosted && IsRunningOnWindows())
+    .Does(() =>
+{
+    var coverageFiles = GetFiles("./coverage-results/*.opencover.xml")
+        .Select(f => f.FullPath)
+        .ToArray();
+    var token = EnvironmentVariable("CODECOV_REPO_TOKEN");
 
-Task("AppVeyor")
-    .IsDependentOn("Pack");
+    var settings = new CodecovSettings
+    {
+        Token = token,
+        Files = coverageFiles
+    };
+
+    // Upload coverage reports.
+    Codecov(settings);
+});
+
+Task("Default")
+   .IsDependentOn("CodeCov");
 
 RunTarget(target);
