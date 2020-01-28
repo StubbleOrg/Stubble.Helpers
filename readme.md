@@ -49,9 +49,9 @@ Assert.Equal("£10.00", result);
 
 Cavets:
 - The type should match or be convertable to the argument type
-- If you're writing a string and it has spaces then it should be escaped with quotes either `"` or `'`.
-- Quoted strings are treated as verbatim and will not be attempted to be looked up in the context however their type will still be converted
-- If you have a quote in your string for example `It's` then you can escape it with a `/`
+- If you're writing a constant string as an argument then it should be escaped with quotes either `"` or `'`.
+Quoted strings are treated as verbatim and will not be attempted to be looked up in the context however their type will still be converted
+- If you have a quote in your string for example `It's` then you can escape it with a `/` like so: `It/'s`
 
 ## Argument Type Converting
 The helpers will try to be as smart and convert the parameters types if you're convertable or able to be used as that value. For example `string->int`.
