@@ -81,9 +81,13 @@ namespace Stubble.Helpers
 
         private static object TryConvertTypeIfRequired(object value, string arg, Type type)
         {
-            if (value is null)
+            if (value is null && !type.IsValueType)
             {
-                // When lookup is null we should use the argument as passed
+                return null;
+            }
+            else if (value is null)
+            {
+                // When lookup is null and type is not a string we should try convert since may be a constant integer or float.
                 value = arg;
             }
 

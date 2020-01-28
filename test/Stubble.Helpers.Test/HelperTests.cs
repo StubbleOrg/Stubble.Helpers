@@ -159,11 +159,11 @@ namespace Stubble.Helpers.Test
                 })
                 .Build();
 
-            var tmpl = @"{{FormatCurrency 10}}, {{FormatCurrency Count}}";
+            var tmpl = @"{{FormatCurrency 10.21}}, {{FormatCurrency Count}}";
 
             var res = builder.Render(tmpl, new { Count = 100.26m });
 
-            Assert.Equal("£10.00, £100.26", res);
+            Assert.Equal("£10.21, £100.26", res);
         }
 
         [Fact]
@@ -273,6 +273,42 @@ namespace Stubble.Helpers.Test
             var res = builder.Render("List: {{PrintListWithComma}}", new { List = new[] { 1, 2, 3 } });
 
             Assert.Equal("List: 1, 2, 3", res);
+        }
+
+        [Fact]
+        public void ItShouldNotRenderHelperWithMissingLookedUpArgumentThatIsntValueType()
+        {
+            var helpers = new Helpers()
+                .Register<string>("ToCapitalLetters", (context, arg) => arg.ToUpperInvariant());
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf => conf.AddHelpers(helpers))
+                .Build();
+
+            var res = renderer.Render("User name is '{{Name}}' and nickname is '{{Nickname}}'. In capital letters name is '{{ToCapitalLetters Name}}' and nickname is '{{ToCapitalLetters Nickname}}'", new
+            {
+                Name = "John"
+            });
+
+            Assert.Equal("User name is 'John' and nickname is ''. In capital letters name is 'JOHN' and nickname is ''", res);
+        }
+
+        [Fact]
+        public void ItShouldRenderHelperWithConstantQuotedStringArgument()
+        {
+            var helpers = new Helpers()
+                .Register<string>("ToCapitalLetters", (context, arg) => arg.ToUpperInvariant());
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf => conf.AddHelpers(helpers))
+                .Build();
+
+            var res = renderer.Render("User name is '{{Name}}' and nickname is '{{Nickname}}'. In capital letters name is '{{ToCapitalLetters Name}}' and nickname is '{{ToCapitalLetters 'Nickname'}}'", new
+            {
+                Name = "John"
+            });
+
+            Assert.Equal("User name is 'John' and nickname is ''. In capital letters name is 'JOHN' and nickname is 'NICKNAME'", res);
         }
     }
 }
