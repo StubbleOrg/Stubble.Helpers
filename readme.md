@@ -1,5 +1,4 @@
 # Stubble Extensions - Helpers [![Build Status](https://dev.azure.com/stubble/Stubble.Helpers/_apis/build/status/StubbleOrg.Stubble.Helpers?branchName=master)](https://dev.azure.com/stubble/Stubble.Helpers/_build/latest?definitionId=3&branchName=master) [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Stubble.Helpers.svg?label=Nuget%20Pre-Release&style=flat-square)](https://www.nuget.org/packages/Stubble.Helpers/)
-_Currently In Progress_
 
 Stubble helpers is an opinionated method of registering helpers with the Stubble renderer to call certain methods with arguments while rendering your templates much like [Handlebars.js helpers](https://handlebarsjs.com/expressions.html);
 
