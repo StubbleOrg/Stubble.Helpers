@@ -1,6 +1,6 @@
 #tool nuget:?package=Codecov&version=1.5.0
 #addin nuget:?package=Cake.Codecov&version=0.6.0
-#addin nuget:?package=Cake.Coverlet&version=2.3.4
+#addin nuget:?package=Cake.Coverlet&version=2.4.2
 
 ///////////////////////////////////////////////////////////////////////////////
 // ARGUMENTS
