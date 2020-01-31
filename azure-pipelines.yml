@@ -62,7 +62,7 @@ jobs:
         
 - job: Linux
   pool:
-    vmImage: 'ubuntu-latest'
+    vmImage: 'ubuntu-18.04'
   steps:
     - checkout: self
       submodules: true
