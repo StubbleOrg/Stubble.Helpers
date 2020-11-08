@@ -12,7 +12,7 @@ namespace Stubble.Helpers
         }
 
         public HelperArgument(string value)
-            : this (value, true)
+            : this(value, true)
         {
         }
 

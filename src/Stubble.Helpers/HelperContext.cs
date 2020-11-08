@@ -1,7 +1,7 @@
 ﻿using System;
 using Stubble.Core.Contexts;
-using Stubble.Core.Settings;
 using Stubble.Core.Exceptions;
+using Stubble.Core.Settings;
 
 namespace Stubble.Helpers
 {

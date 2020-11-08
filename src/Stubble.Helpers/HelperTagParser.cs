@@ -70,7 +70,7 @@ namespace Stubble.Helpers
                 contentEnd = args.End + 1;
 
                 argsList = ParseArguments(new StringSlice(args.Text, args.Start, args.End));
-            } 
+            }
             else
             {
                 while (!slice.IsEmpty && !slice.Match(processor.CurrentTags.EndTag))

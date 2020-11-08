@@ -1,105 +1,105 @@
 trigger:
   branches:
     include:
-    - master
+      - master
   paths:
     exclude:
-    - "*.md"
-    - "docs/*"
-    - "version.json"
+      - "*.md"
+      - "docs/*"
+      - "version.json"
 
 jobs:
-- job: Windows
-  pool:
-    vmImage: 'windows-2019'
-  steps:
-    - checkout: self
-      submodules: true
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'custom'
-        custom: 'tool'
-        arguments: 'restore'
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'custom'
-        custom: 'cake'
-      env:
-        CODECOV_REPO_TOKEN: $(CODECOV_REPO_TOKEN)
-    - task: PublishTestResults@2
-      condition: succeededOrFailed()
-      inputs:
-        testRunTitle: 'Tests $(Agent.JobName)'
-        testResultsFormat: 'VSTest'
-        testResultsFiles: '**/*.trx'
-        mergeTestResults: true
-    - task: PublishCodeCoverageResults@1
-      condition: succeededOrFailed()
-      inputs:
-        codeCoverageTool: 'Cobertura'
-        summaryFileLocation: 'coverage-results/*.cobertura.xml'
-    - task: PublishBuildArtifacts@1
-      inputs:
-        PathtoPublish: 'artifacts/'
-        ArtifactName: 'drop'
-        publishLocation: 'Container'
+  - job: Windows
+    pool:
+      vmImage: "windows-2019"
+    steps:
+      - checkout: self
+        submodules: true
+      - task: DotNetCoreCLI@2
+        inputs:
+          command: "custom"
+          custom: "tool"
+          arguments: "restore"
+      - task: DotNetCoreCLI@2
+        inputs:
+          command: "custom"
+          custom: "cake"
+        env:
+          CODECOV_REPO_TOKEN: $(CODECOV_REPO_TOKEN)
+      - task: PublishTestResults@2
+        condition: succeededOrFailed()
+        inputs:
+          testRunTitle: "Tests $(Agent.JobName)"
+          testResultsFormat: "VSTest"
+          testResultsFiles: "**/*.trx"
+          mergeTestResults: true
+      - task: PublishCodeCoverageResults@1
+        condition: succeededOrFailed()
+        inputs:
+          codeCoverageTool: "Cobertura"
+          summaryFileLocation: "coverage-results/*.cobertura.xml"
+      - task: PublishBuildArtifacts@1
+        inputs:
+          PathtoPublish: "artifacts/"
+          ArtifactName: "drop"
+          publishLocation: "Container"
 
-- job: macOS
-  pool:
-    vmImage: 'macOS-10.14'
-  steps:
-    - checkout: self
-      submodules: true
-    - task: UseDotNet@2
-      inputs:
-        packageType: 'sdk'
-        version: '3.0.102'
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'custom'
-        custom: 'tool'
-        arguments: 'restore'
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'custom'
-        custom: 'cake'
-    - task: PublishTestResults@2
-      condition: succeededOrFailed()
-      inputs:
-        testRunTitle: 'Tests $(Agent.JobName)'
-        testResultsFormat: 'VSTest'
-        testResultsFiles: '**/*.trx'
-        mergeTestResults: true
-    - task: PublishCodeCoverageResults@1
-      condition: succeededOrFailed()
-      inputs:
-        codeCoverageTool: 'Cobertura'
-        summaryFileLocation: 'coverage-results/*.cobertura.xml'
+  - job: macOS
+    pool:
+      vmImage: "macOS-latest"
+    steps:
+      - checkout: self
+        submodules: true
+      - task: UseDotNet@2
+        inputs:
+          packageType: "sdk"
+          version: "3.0.102"
+      - task: DotNetCoreCLI@2
+        inputs:
+          command: "custom"
+          custom: "tool"
+          arguments: "restore"
+      - task: DotNetCoreCLI@2
+        inputs:
+          command: "custom"
+          custom: "cake"
+      - task: PublishTestResults@2
+        condition: succeededOrFailed()
+        inputs:
+          testRunTitle: "Tests $(Agent.JobName)"
+          testResultsFormat: "VSTest"
+          testResultsFiles: "**/*.trx"
+          mergeTestResults: true
+      - task: PublishCodeCoverageResults@1
+        condition: succeededOrFailed()
+        inputs:
+          codeCoverageTool: "Cobertura"
+          summaryFileLocation: "coverage-results/*.cobertura.xml"
 
-- job: Linux
-  pool:
-    vmImage: 'ubuntu-18.04'
-  steps:
-    - checkout: self
-      submodules: true
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'custom'
-        custom: 'tool'
-        arguments: 'restore'
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'custom'
-        custom: 'cake'
-    - task: PublishTestResults@2
-      condition: succeededOrFailed()
-      inputs:
-        testRunTitle: 'Tests $(Agent.JobName)'
-        testResultsFormat: 'VSTest'
-        testResultsFiles: '**/*.trx'
-        mergeTestResults: true
-    - task: PublishCodeCoverageResults@1
-      condition: succeededOrFailed()
-      inputs:
-        codeCoverageTool: 'Cobertura'
-        summaryFileLocation: 'coverage-results/*.cobertura.xml'
+  - job: Linux
+    pool:
+      vmImage: "ubuntu-18.04"
+    steps:
+      - checkout: self
+        submodules: true
+      - task: DotNetCoreCLI@2
+        inputs:
+          command: "custom"
+          custom: "tool"
+          arguments: "restore"
+      - task: DotNetCoreCLI@2
+        inputs:
+          command: "custom"
+          custom: "cake"
+      - task: PublishTestResults@2
+        condition: succeededOrFailed()
+        inputs:
+          testRunTitle: "Tests $(Agent.JobName)"
+          testResultsFormat: "VSTest"
+          testResultsFiles: "**/*.trx"
+          mergeTestResults: true
+      - task: PublishCodeCoverageResults@1
+        condition: succeededOrFailed()
+        inputs:
+          codeCoverageTool: "Cobertura"
+          summaryFileLocation: "coverage-results/*.cobertura.xml"
