@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using FluentAssertions;
+using FluentAssertions.Execution;
 using Stubble.Core.Builders;
 using Stubble.Core.Parser;
 using Stubble.Core.Parser.TokenParsers;
@@ -62,7 +63,7 @@ namespace Stubble.Helpers.Test
         }
 
         [Fact]
-        public void ItParsesHelpersWithMultipleArguments()
+        public void ItParsesHelpersWithMultipleLookupArguments()
         {
             var parser = new InstanceMustacheParser();
             var helpers = new Helpers()
@@ -71,13 +72,54 @@ namespace Stubble.Helpers.Test
 
             var tokens = parser.Parse("{{MyHelper MyArgument1 MyArgument2}}", pipeline: pipeline);
 
-            Assert.Single(tokens.Children);
-            var helperToken = Assert.IsType<HelperToken>(tokens.Children[0]);
-            Assert.Equal("MyHelper", helperToken.Name.ToString());
-            Assert.Equal("MyArgument1", helperToken.Args[0].Value);
-            Assert.True(helperToken.Args[0].ShouldAttemptContextLoad);
-            Assert.Equal("MyArgument2", helperToken.Args[1].Value);
-            Assert.True(helperToken.Args[0].ShouldAttemptContextLoad);
+            using (new AssertionScope())
+            {
+                var helperToken = tokens.Children
+                    .Should().ContainSingle().Which
+                    .Should().BeOfType<HelperToken>().Which;
+
+                helperToken.Should().BeEquivalentTo(new
+                {
+                    Name = "MyHelper",
+                    Args = new []
+                    {
+                        new { Value = "MyArgument1", ShouldAttemptContextLoad = true },
+                        new { Value = "MyArgument2", ShouldAttemptContextLoad = true },
+                    }
+                });
+            }
+        }
+
+        [Theory]
+        [InlineData("\"MyArgument1\"", "MyArgument1", "\"MyArgument2\"", "MyArgument2")]
+        [InlineData("\'MyArgument1\'", "MyArgument1", "\'MyArgument2\'", "MyArgument2")]
+        [InlineData("\"MyArgument1\"", "MyArgument1", "\'MyArgument2\'", "MyArgument2")]
+        [InlineData("\'MyArgument1\'", "MyArgument1", "\"MyArgument2\"", "MyArgument2")]
+        public void ItParsesHelpersWithMultipleStaticArguments(string arg1, string arg1Value, string arg2, string arg2Value )
+        {
+            var parser = new InstanceMustacheParser();
+            var helpers = new Helpers()
+                .Register<string, string>("MyHelper", (ctx, arg1x, arg2x) => "Foo");
+            var pipeline = BuildHelperPipeline(helpers);
+
+            var tokens = parser.Parse($"{{{{MyHelper {arg1} {arg2}}}}}", pipeline: pipeline);
+
+            using (new AssertionScope())
+            {
+                var helperToken = tokens.Children
+                    .Should().ContainSingle().Which
+                    .Should().BeOfType<HelperToken>().Which;
+
+                helperToken.Should().BeEquivalentTo(new
+                {
+                    Name = "MyHelper",
+                    Args = new[]
+                    {
+                        new { Value = arg1Value, ShouldAttemptContextLoad = false },
+                        new { Value = arg2Value, ShouldAttemptContextLoad = false },
+                    }
+                });
+            }
         }
 
         [Fact]

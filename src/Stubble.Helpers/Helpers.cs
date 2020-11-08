@@ -29,7 +29,7 @@ namespace Stubble.Helpers
 
         private Helpers Register(string name, Delegate @delegate)
         {
-            if (string.IsNullOrEmpty(name)) 
+            if (string.IsNullOrEmpty(name))
             {
                 throw new ArgumentNullException(nameof(name));
             }
