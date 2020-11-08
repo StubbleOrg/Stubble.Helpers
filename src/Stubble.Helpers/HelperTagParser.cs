@@ -114,7 +114,6 @@ namespace Stubble.Helpers
                 if (slice.CurrentChar == '"' || slice.CurrentChar == '\'')
                 {
                     args.Add(ParseQuotedString(ref slice));
-                    continue;
                 }
                 else
                 {
