@@ -310,5 +310,23 @@ namespace Stubble.Helpers.Test
 
             Assert.Equal("User name is 'John' and nickname is ''. In capital letters name is 'JOHN' and nickname is 'NICKNAME'", res);
         }
+
+        [Fact]
+        public void ItShouldRenderHelperWithTwoConstantArguments()
+        {
+            var helpers = new Helpers()
+                .Register("ReplaceString", (HelperContext context, string searchString, string oldString, string newString) => searchString?.Replace(oldString, newString, StringComparison.InvariantCulture));
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf => conf.AddHelpers(helpers))
+                .Build();
+
+            var result = renderer.Render("Name: {{ReplaceString Name 'XXX' ' '}}", new
+            {
+                Name = "JohnXXXSmith"
+            });
+
+            Assert.Equal("Name: John Smith", result);
+        }
     }
 }
