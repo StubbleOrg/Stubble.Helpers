@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Stubble.Core.Contexts;
 using Stubble.Core.Renderers.StringRenderer;
@@ -61,14 +62,23 @@ namespace Stubble.Helpers
                     }
 
                     var result = helper.Delegate.Method.Invoke(helper.Delegate.Target, arr);
+
+                    string value = null;
                     if (result is string str)
                     {
-                        renderer.Write(str);
+                        value = str;
                     }
                     else if (result is object)
                     {
-                        renderer.Write(Convert.ToString(result, context.RenderSettings.CultureInfo));
+                        value = Convert.ToString(result, context.RenderSettings.CultureInfo);
                     }
+
+                    if (!context.RenderSettings.SkipHtmlEncoding && obj.EscapeResult && value is object)
+                    {
+                        value = context.RendererSettings.EncodingFuction(value);
+                    }
+
+                    renderer.Write(value);
                 }
             }
         }
