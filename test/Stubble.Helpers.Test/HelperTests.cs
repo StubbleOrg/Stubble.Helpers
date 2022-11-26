@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
+using FluentAssertions;
 using McMaster.Extensions.Xunit;
 using Stubble.Core.Builders;
+using Stubble.Core.Settings;
 using Xunit;
 
 namespace Stubble.Helpers.Test
@@ -20,7 +22,7 @@ namespace Stubble.Helpers.Test
                     return count.ToString("C", culture);
                 });
 
-            var builder = new StubbleBuilder()
+            var renderer = new StubbleBuilder()
                 .Configure(conf =>
                 {
                     conf.AddHelpers(helpers);
@@ -29,9 +31,12 @@ namespace Stubble.Helpers.Test
 
             var tmpl = @"{{FormatCurrency Count}}, {{FormatCurrency Count2}}";
 
-            var res = builder.Render(tmpl, new { Count = 10m, Count2 = 100.26m });
+            var res = renderer.Render(tmpl, new { Count = 10m, Count2 = 100.26m }, new RenderSettings
+            {
+                SkipHtmlEncoding = true,
+            });
 
-            Assert.Equal("£10.00, £100.26", res);
+            res.Should().Be("£10.00, £100.26");
         }
 
         [Fact]
@@ -43,7 +48,7 @@ namespace Stubble.Helpers.Test
                     return count.ToString("C", context.RenderSettings.CultureInfo);
                 });
 
-            var builder = new StubbleBuilder()
+            var renderer = new StubbleBuilder()
                 .Configure(conf =>
                 {
                     conf.AddHelpers(helpers);
@@ -52,12 +57,13 @@ namespace Stubble.Helpers.Test
 
             var tmpl = @"{{FormatCurrency Count}}, {{FormatCurrency Count2}}";
 
-            var res = builder.Render(tmpl, new { Count = 10m, Count2 = 100.26m }, new Core.Settings.RenderSettings
+            var res = renderer.Render(tmpl, new { Count = 10m, Count2 = 100.26m }, new RenderSettings
             {
-                CultureInfo = new CultureInfo("en-GB")
+                CultureInfo = new CultureInfo("en-GB"),
+                SkipHtmlEncoding = true,
             });
 
-            Assert.Equal("£10.00, £100.26", res);
+            res.Should().Be("£10.00, £100.26");
         }
 
         [Fact]
@@ -71,7 +77,7 @@ namespace Stubble.Helpers.Test
                     return count.ToString("C", culture);
                 });
 
-            var builder = new StubbleBuilder()
+            var renderer = new StubbleBuilder()
                 .Configure(conf =>
                 {
                     conf.AddHelpers(helpers);
@@ -80,9 +86,12 @@ namespace Stubble.Helpers.Test
 
             var tmpl = @"{{Count}}: {{FormatCurrency Count}}, {{Count2}}: {{FormatCurrency Count2}}";
 
-            var res = builder.Render(tmpl, new { Count = 10m, Count2 = 100.26m });
+            var res = renderer.Render(tmpl, new { Count = 10m, Count2 = 100.26m }, new RenderSettings
+            {
+                SkipHtmlEncoding = true,
+            });
 
-            Assert.Equal("10: £10.00, 100.26: £100.26", res);
+            res.Should().Be("10: £10.00, 100.26: £100.26");
         }
 
         [Fact]
@@ -105,9 +114,12 @@ namespace Stubble.Helpers.Test
 
             var tmpl = @"{{  Count  }}: {{  FormatCurrency Count  }}, {{  Count2  }}: {{  FormatCurrency Count2  }}";
 
-            var res = builder.Render(tmpl, new { Count = 10m, Count2 = 100.26m });
+            var res = builder.Render(tmpl, new { Count = 10m, Count2 = 100.26m }, new RenderSettings
+            {
+                SkipHtmlEncoding = true,
+            });
 
-            Assert.Equal("10: £10.00, 100.26: £100.26", res);
+            res.Should().Be("10: £10.00, 100.26: £100.26");
         }
 
         [Fact]
@@ -125,7 +137,7 @@ namespace Stubble.Helpers.Test
                     return $"{count}{comma}";
                 });
 
-            var builder = new StubbleBuilder()
+            var renderer = new StubbleBuilder()
                 .Configure(conf =>
                 {
                     conf.AddHelpers(helpers);
@@ -136,9 +148,9 @@ namespace Stubble.Helpers.Test
 
             var list = Enumerable.Range(1, 10).ToArray();
 
-            var res = builder.Render(tmpl, new { List = list });
+            var res = renderer.Render(tmpl, new { List = list });
 
-            Assert.Equal(string.Join(", ", list), res);
+            res.Should().Be(string.Join(", ", list));
         }
 
         [Fact]
@@ -152,7 +164,7 @@ namespace Stubble.Helpers.Test
                     return count.ToString("C", culture);
                 });
 
-            var builder = new StubbleBuilder()
+            var renderer = new StubbleBuilder()
                 .Configure(conf =>
                 {
                     conf.AddHelpers(helpers);
@@ -161,9 +173,12 @@ namespace Stubble.Helpers.Test
 
             var tmpl = @"{{FormatCurrency 10.21}}, {{FormatCurrency Count}}";
 
-            var res = builder.Render(tmpl, new { Count = 100.26m });
+            var res = renderer.Render(tmpl, new { Count = 100.26m }, new RenderSettings
+            {
+                SkipHtmlEncoding = true,
+            });
 
-            Assert.Equal("£10.21, £100.26", res);
+            res.Should().Be("£10.21, £100.26");
         }
 
         [Fact]
@@ -175,7 +190,7 @@ namespace Stubble.Helpers.Test
                     return $"{count * multiplier}";
                 });
 
-            var builder = new StubbleBuilder()
+            var renderer = new StubbleBuilder()
                 .Configure(conf =>
                 {
                     conf.AddHelpers(helpers);
@@ -184,9 +199,9 @@ namespace Stubble.Helpers.Test
 
             var tmpl = @"{{Multiply 5 5}}, {{Multiply Count 5}}";
 
-            var res = builder.Render(tmpl, new { Count = 2 });
+            var res = renderer.Render(tmpl, new { Count = 2 });
 
-            Assert.Equal("25, 10", res);
+            res.Should().Be("25, 10");
         }
 
         [Fact]
@@ -198,7 +213,7 @@ namespace Stubble.Helpers.Test
                     return string.IsNullOrEmpty(str) ? @default : str;
                 });
 
-            var builder = new StubbleBuilder()
+            var renderer = new StubbleBuilder()
                 .Configure(conf =>
                 {
                     conf.AddHelpers(helpers);
@@ -207,9 +222,9 @@ namespace Stubble.Helpers.Test
 
             var tmpl = @"{{DefaultMe Value ""I'm Defaulted""}}";
 
-            var res = builder.Render(tmpl, new { Value = "" });
+            var res = renderer.Render(tmpl, new { Value = "" });
 
-            Assert.Equal("I'm Defaulted", res);
+            res.Should().Be("I&#39;m Defaulted");
         }
 
         [Fact]
@@ -221,7 +236,7 @@ namespace Stubble.Helpers.Test
                     return string.IsNullOrEmpty(str) ? @default : str;
                 });
 
-            var builder = new StubbleBuilder()
+            var renderer = new StubbleBuilder()
                 .Configure(conf =>
                 {
                     conf.AddHelpers(helpers);
@@ -230,9 +245,9 @@ namespace Stubble.Helpers.Test
 
             var tmpl = @"{{DefaultMe Value 'I\'m Defaulted'}}";
 
-            var res = builder.Render(tmpl, new { Value = "" });
+            var res = renderer.Render(tmpl, new { Value = "" });
 
-            Assert.Equal("I'm Defaulted", res);
+            res.Should().Be("I&#39;m Defaulted");
         }
 
         [Theory]
@@ -246,7 +261,7 @@ namespace Stubble.Helpers.Test
                     return $"<{staticVariable}#{dynamicVariable}>";
                 });
 
-            var builder = new StubbleBuilder()
+            var renderer = new StubbleBuilder()
                 .Configure(conf =>
                 {
                     conf.AddHelpers(helpers);
@@ -255,9 +270,9 @@ namespace Stubble.Helpers.Test
 
             var tmpl = @"{{MyHelper " + staticValue + " Count }}";
 
-            var res = builder.Render(tmpl, new { Count = 10 });
+            var res = renderer.Render(tmpl, new { Count = 10 }, new RenderSettings { SkipHtmlEncoding = true });
 
-            Assert.Equal($"<Count#10>", res);
+            res.Should().Be($"<Count#10>");
         }
 
         [Fact]
@@ -266,13 +281,13 @@ namespace Stubble.Helpers.Test
             var helpers = new Helpers()
                 .Register("PrintListWithComma", (context) => string.Join(", ", context.Lookup<int[]>("List")));
 
-            var builder = new StubbleBuilder()
+            var renderer = new StubbleBuilder()
                 .Configure(conf => conf.AddHelpers(helpers))
                 .Build();
 
-            var res = builder.Render("List: {{PrintListWithComma}}", new { List = new[] { 1, 2, 3 } });
+            var res = renderer.Render("List: {{PrintListWithComma}}", new { List = new[] { 1, 2, 3 } });
 
-            Assert.Equal("List: 1, 2, 3", res);
+            res.Should().Be("List: 1, 2, 3");
         }
 
         [Fact]
@@ -290,7 +305,7 @@ namespace Stubble.Helpers.Test
                 Name = "John"
             });
 
-            Assert.Equal("User name is 'John' and nickname is ''. In capital letters name is 'JOHN' and nickname is ''", res);
+            res.Should().Be("User name is 'John' and nickname is ''. In capital letters name is 'JOHN' and nickname is ''");
         }
 
         [Fact]
@@ -308,7 +323,7 @@ namespace Stubble.Helpers.Test
                 Name = "John"
             });
 
-            Assert.Equal("User name is 'John' and nickname is ''. In capital letters name is 'JOHN' and nickname is 'NICKNAME'", res);
+            res.Should().Be("User name is 'John' and nickname is ''. In capital letters name is 'JOHN' and nickname is 'NICKNAME'");
         }
 
         [Fact]
@@ -326,7 +341,106 @@ namespace Stubble.Helpers.Test
                 Name = "JohnXXXSmith"
             });
 
-            Assert.Equal("Name: John Smith", result);
+            result.Should().Be("Name: John Smith");
+        }
+
+        [Fact]
+        public void ItShouldRenderByDefaultEscaped()
+        {
+            var culture = new CultureInfo("en-GB");
+            var helpers = new Helpers()
+                .Register<decimal>("FormatCurrency", (context, count) =>
+                {
+                    return count.ToString("C", culture);
+                });
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf =>
+                {
+                    conf.AddHelpers(helpers);
+                })
+                .Build();
+
+            var tmpl = @"{{FormatCurrency Count}}, {{FormatCurrency Count2}}";
+
+            var res = renderer.Render(tmpl, new { Count = 10m, Count2 = 100.26m });
+
+            res.Should().Be("&#163;10.00, &#163;100.26");
+        }
+
+        [Fact]
+        public void ItShouldSkipHtmlEncodingWhenSet()
+        {
+            var culture = new CultureInfo("en-GB");
+            var helpers = new Helpers()
+                .Register<decimal>("FormatCurrency", (context, count) =>
+                {
+                    return count.ToString("C", culture);
+                });
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf =>
+                {
+                    conf.AddHelpers(helpers);
+                })
+                .Build();
+
+            var tmpl = @"{{FormatCurrency Count}}, {{FormatCurrency Count2}}";
+
+            var res = renderer.Render(tmpl, new { Count = 10m, Count2 = 100.26m }, new RenderSettings
+            {
+                SkipHtmlEncoding = true,
+            });
+
+            res.Should().Be("£10.00, £100.26");
+        }
+
+        [Fact]
+        public void ItShouldRenderWithEscapedContextTripleBrackets()
+        {
+            var culture = new CultureInfo("en-GB");
+            var helpers = new Helpers()
+                .Register<decimal>("FormatCurrency", (context, count) =>
+                {
+                    return count.ToString("C", culture);
+                });
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf =>
+                {
+                    conf.AddHelpers(helpers);
+                })
+                .Build();
+
+            var tmpl = @"{{{FormatCurrency Count}}}, {{{FormatCurrency Count2}}}";
+
+            var res = renderer.Render(tmpl, new { Count = 10m, Count2 = 100.26m });
+
+            res.Should().Be("£10.00, £100.26");
+        }
+
+        [Fact]
+        public void ItShouldRenderWithAmpersandEscapedContext()
+        {
+            var culture = new CultureInfo("en-GB");
+            var helpers = new Helpers()
+                .Register<decimal>("FormatCurrency", (context, count) =>
+                {
+                    return count.ToString("C", culture);
+                });
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf =>
+                {
+                    conf.AddHelpers(helpers);
+                })
+                .Build();
+
+            var tmpl = @"{{& FormatCurrency Count}}, {{& FormatCurrency Count2}}";
+
+            var res = renderer.Render(tmpl, new { Count = 10m, Count2 = 100.26m });
+
+            res.Should().Be("£10.00, £100.26");
         }
     }
 }

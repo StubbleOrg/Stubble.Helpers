@@ -12,7 +12,8 @@ var stubble = new StubbleBuilder()
     .Configure(conf => conf.AddHelpers(helpers))
     .Build();
 
-var result = stubble.Render("{{FormatCurrency Count}}", new { Count = 100.26m });
+// Note the '{{{' here to escape the £ symbol, by default the result is HtmlEscaped like the standard mustache tag
+var result = stubble.Render("{{{FormatCurrency Count}}}", new { Count = 100.26m });
 
 Assert.Equal("£100.26", result);
 ```
@@ -41,7 +42,7 @@ var stubble = new StubbleBuilder()
     .Configure(conf => conf.AddHelpers(helpers))
     .Build();
 
-var result = stubble.Render("{{FormatCurrency 10}}", new { });
+var result = stubble.Render("{{{FormatCurrency 10}}}", new { });
 
 Assert.Equal("£10.00", result);
 ```

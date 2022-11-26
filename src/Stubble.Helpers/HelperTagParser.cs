@@ -23,8 +23,9 @@ namespace Stubble.Helpers
             {
                 throw new System.ArgumentNullException(nameof(processor));
             }
-
             var tagStart = slice.Start - processor.CurrentTags.StartTag.Length;
+            var escapeResult = true;
+            var isTripleMustache = false;
             var index = slice.Start;
 
             while (slice[index].IsWhitespace())
@@ -32,10 +33,30 @@ namespace Stubble.Helpers
                 index++;
             }
 
+            var match = slice[index];
+            if (match == '&')
+            {
+                escapeResult = false;
+                index++;
+            }
+            else if (match == '{')
+            {
+                escapeResult = false;
+                isTripleMustache = true;
+                index++;
+            }
+
+            while (slice[index].IsWhitespace())
+            {
+                index++;
+            }
+
+            var endTag = isTripleMustache ? '}' + processor.CurrentTags.EndTag : processor.CurrentTags.EndTag;
+
             var nameStart = index;
 
             // Skip whitespace or until end tag
-            while (!slice[index].IsWhitespace() && !slice.Match(processor.CurrentTags.EndTag, index - slice.Start))
+            while (!slice[index].IsWhitespace() && !slice.Match(endTag, index - slice.Start))
             {
                 index++;
             }
@@ -43,7 +64,7 @@ namespace Stubble.Helpers
             var name = slice.ToString(nameStart, index);
 
             // Skip whitespace or until end tag
-            while (slice[index].IsWhitespace() && !slice.Match(processor.CurrentTags.EndTag, index - slice.Start))
+            while (slice[index].IsWhitespace() && !slice.Match(endTag, index - slice.Start))
             {
                 index++;
             }
@@ -60,7 +81,7 @@ namespace Stubble.Helpers
                 var argsStart = index;
                 slice.Start = index;
 
-                while (!slice.IsEmpty && !slice.Match(processor.CurrentTags.EndTag))
+                while (!slice.IsEmpty && !slice.Match(endTag))
                 {
                     slice.NextChar();
                 }
@@ -73,7 +94,7 @@ namespace Stubble.Helpers
             }
             else
             {
-                while (!slice.IsEmpty && !slice.Match(processor.CurrentTags.EndTag))
+                while (!slice.IsEmpty && !slice.Match(endTag))
                 {
                     slice.NextChar();
                 }
@@ -81,7 +102,7 @@ namespace Stubble.Helpers
                 contentEnd = slice.Start;
             }
 
-            if (!slice.Match(processor.CurrentTags.EndTag))
+            if (!slice.Match(endTag))
             {
                 throw new StubbleException($"Unclosed Tag at {slice.Start.ToString(CultureInfo.InvariantCulture)}");
             }
@@ -92,11 +113,12 @@ namespace Stubble.Helpers
                 ContentStartPosition = nameStart,
                 Name = name,
                 Args = argsList,
+                EscapeResult = escapeResult,
                 ContentEndPosition = contentEnd,
-                TagEndPosition = slice.Start + processor.CurrentTags.EndTag.Length,
+                TagEndPosition = slice.Start + endTag.Length,
                 IsClosed = true
             };
-            slice.Start += processor.CurrentTags.EndTag.Length;
+            slice.Start += endTag.Length;
 
             processor.CurrentToken = tag;
             processor.HasSeenNonSpaceOnLine = true;

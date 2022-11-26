@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
+using FluentAssertions;
 using Stubble.Core.Contexts;
 using Stubble.Core.Renderers.StringRenderer;
 using Stubble.Core.Settings;
@@ -36,7 +37,7 @@ namespace Stubble.Helpers.Test
 
             var res = writer.ToString();
 
-            Assert.Equal("", res);
+            res.Should().BeEmpty();
         }
 
         [Fact]
@@ -70,7 +71,7 @@ namespace Stubble.Helpers.Test
 
             var res = writer.ToString();
 
-            Assert.Equal("<10>", res);
+            res.Should().Be("<10>");
         }
 
         [Fact]
@@ -105,7 +106,7 @@ namespace Stubble.Helpers.Test
 
             var res = writer.ToString();
 
-            Assert.Equal("<10-20>", res);
+            res.Should().Be("<10-20>");
         }
 
         [Fact]
@@ -140,7 +141,7 @@ namespace Stubble.Helpers.Test
 
             var res = writer.ToString();
 
-            Assert.Equal("<20-20>", res);
+            res.Should().Be("<20-20>");
         }
 
         [Fact]
@@ -174,7 +175,7 @@ namespace Stubble.Helpers.Test
 
             var res = writer.ToString();
 
-            Assert.Equal("", res);
+            res.Should().BeEmpty();
         }
 
         [Fact]
@@ -208,7 +209,7 @@ namespace Stubble.Helpers.Test
 
             var res = writer.ToString();
 
-            Assert.Equal("", res);
+            res.Should().BeEmpty();
         }
 
         [Fact]
@@ -242,7 +243,7 @@ namespace Stubble.Helpers.Test
 
             var res = writer.ToString();
 
-            Assert.Equal("<10>", res);
+            res.Should().Be("<10>");
         }
 
         [Fact]
@@ -280,7 +281,7 @@ namespace Stubble.Helpers.Test
 
             var res = writer.ToString();
 
-            Assert.Equal("<10>", res);
+            res.Should().Be("<10>");
         }
 
         [Fact]
@@ -314,7 +315,7 @@ namespace Stubble.Helpers.Test
 
             var res = writer.ToString();
 
-            Assert.Equal("<10>", res);
+            res.Should().Be("<10>");
         }
 
         [Fact]
@@ -351,7 +352,7 @@ namespace Stubble.Helpers.Test
 
             var res = writer.ToString();
 
-            Assert.Equal("1,21", res);
+            res.Should().Be("1,21");
         }
 
         [Fact]
@@ -385,7 +386,7 @@ namespace Stubble.Helpers.Test
 
             var res = writer.ToString();
 
-            Assert.Equal("", res);
+            res.Should().BeEmpty();
         }
     }
 }
