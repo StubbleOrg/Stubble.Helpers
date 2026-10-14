@@ -9,6 +9,10 @@ namespace Stubble.Helpers
 
         public ImmutableArray<HelperArgument> Args { get; set; }
 
+        public HelperArgument? InitialValue { get; set; }
+
+        public ImmutableArray<HelperStage> Pipeline { get; set; } = ImmutableArray<HelperStage>.Empty;
+
         public bool EscapeResult { get; set; }
 
         public override bool Equals(HelperToken other) =>
@@ -18,6 +22,9 @@ namespace Stubble.Helpers
             && other.Content.Equals(Content)
             && other.Name.Equals(Name, System.StringComparison.OrdinalIgnoreCase)
             && CompareHelper.CompareImmutableArraysWithEquatable(Args, other.Args)
+            && other.InitialValue == InitialValue
+            && (Pipeline.IsDefaultOrEmpty && other.Pipeline.IsDefaultOrEmpty
+                || CompareHelper.CompareImmutableArraysWithEquatable(Pipeline, other.Pipeline))
             && other.EscapeResult == EscapeResult;
 
         public override bool Equals(object obj)
@@ -27,6 +34,18 @@ namespace Stubble.Helpers
         /// </summary>
         /// <returns></returns>
         public override int GetHashCode()
-            => (Name, Args, TagStartPosition, TagEndPosition, ContentStartPosition, ContentEndPosition, Content, IsClosed, EscapeResult).GetHashCode();
+        {
+            var hashCode = (Name, Args, InitialValue, TagStartPosition, TagEndPosition, ContentStartPosition, ContentEndPosition, Content, IsClosed, EscapeResult).GetHashCode();
+            if (!Pipeline.IsDefault)
+            {
+                foreach (var stage in Pipeline)
+                {
+                    hashCode = unchecked(hashCode * -1521134295 + stage.GetHashCode());
+                }
+            }
+
+            return hashCode;
+        }
     }
+
 }

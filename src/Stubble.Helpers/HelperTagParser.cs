@@ -1,5 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Globalization;
+using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
 using Stubble.Core.Exceptions;
 using Stubble.Core.Imported;
@@ -23,6 +25,7 @@ namespace Stubble.Helpers
             {
                 throw new System.ArgumentNullException(nameof(processor));
             }
+            var originalSliceStart = slice.Start;
             var tagStart = slice.Start - processor.CurrentTags.StartTag.Length;
             var escapeResult = true;
             var isTripleMustache = false;
@@ -54,57 +57,67 @@ namespace Stubble.Helpers
             var endTag = isTripleMustache ? '}' + processor.CurrentTags.EndTag : processor.CurrentTags.EndTag;
 
             var nameStart = index;
-
-            // Skip whitespace or until end tag
-            while (!slice[index].IsWhitespace() && !slice.Match(endTag, index - slice.Start))
+            var bodyStart = index;
+            while (!slice.IsEmpty && !slice.Match(endTag))
             {
-                index++;
+                slice.NextChar();
             }
 
-            var name = slice.ToString(nameStart, index);
-
-            // Skip whitespace or until end tag
-            while (slice[index].IsWhitespace() && !slice.Match(endTag, index - slice.Start))
-            {
-                index++;
-            }
-
-            if (!_helperMap.TryGetValue(name, out var helperRef))
-            {
-                return false;
-            }
-
-            int contentEnd;
-            var argsList = ImmutableArray<HelperArgument>.Empty;
-            if (helperRef.ArgumentTypes.Length > 1)
-            {
-                var argsStart = index;
-                slice.Start = index;
-
-                while (!slice.IsEmpty && !slice.Match(endTag))
-                {
-                    slice.NextChar();
-                }
-
-                var args = new StringSlice(slice.Text, argsStart, slice.Start - 1);
-                args.TrimEnd();
-                contentEnd = args.End + 1;
-
-                argsList = ParseArguments(new StringSlice(args.Text, args.Start, args.End));
-            }
-            else
-            {
-                while (!slice.IsEmpty && !slice.Match(endTag))
-                {
-                    slice.NextChar();
-                }
-
-                contentEnd = slice.Start;
-            }
-
+            var bodyEnd = slice.Start;
             if (!slice.Match(endTag))
             {
                 throw new StubbleException($"Unclosed Tag at {slice.Start.ToString(CultureInfo.InvariantCulture)}");
+            }
+
+            var stages = SplitStages(slice.ToString(bodyStart, bodyEnd));
+            var firstStage = stages[0].Trim();
+            var firstName = ReadName(firstStage, out var firstArgsText);
+            var pipeline = ImmutableArray.CreateBuilder<HelperStage>();
+            var argsList = ImmutableArray<HelperArgument>.Empty;
+            HelperArgument? initialValue = null;
+            string name;
+
+            if (firstName.Length > 0 && _helperMap.TryGetValue(firstName, out var helperRef))
+            {
+                name = firstName;
+                if (helperRef.ArgumentTypes.Length > 1)
+                {
+                    argsList = ParseArguments(firstArgsText);
+                }
+            }
+            else if (stages.Count > 1)
+            {
+                var initialValues = ParseArguments(firstStage);
+                if (initialValues.Length != 1)
+                {
+                    throw new StubbleException("A helper pipeline must start with one value or a registered helper.");
+                }
+
+                name = null;
+                initialValue = initialValues[0];
+            }
+            else
+            {
+                slice.Start = originalSliceStart;
+                return false;
+            }
+
+            for (var stageIndex = 1; stageIndex < stages.Count; stageIndex++)
+            {
+                var stageText = stages[stageIndex].Trim();
+                var stageName = ReadName(stageText, out var stageArgsText);
+                if (stageName.Length == 0 || !_helperMap.TryGetValue(stageName, out var stageHelper))
+                {
+                    throw new StubbleException($"Unknown helper in pipeline stage '{stageName}'.");
+                }
+
+                var stageArgs = ParseArguments(stageArgsText);
+                if (stageHelper.ArgumentTypes.Length == 1)
+                {
+                    stageArgs = ImmutableArray<HelperArgument>.Empty;
+                }
+
+                pipeline.Add(new HelperStage(stageName, stageArgs));
             }
 
             var tag = new HelperToken
@@ -113,8 +126,10 @@ namespace Stubble.Helpers
                 ContentStartPosition = nameStart,
                 Name = name,
                 Args = argsList,
+                InitialValue = initialValue,
+                Pipeline = pipeline.ToImmutable(),
                 EscapeResult = escapeResult,
-                ContentEndPosition = contentEnd,
+                ContentEndPosition = bodyEnd,
                 TagEndPosition = slice.Start + endTag.Length,
                 IsClosed = true
             };
@@ -126,61 +141,125 @@ namespace Stubble.Helpers
             return true;
         }
 
-        private ImmutableArray<HelperArgument> ParseArguments(StringSlice slice)
+        private static List<string> SplitStages(string input)
         {
-            slice.TrimStart();
-            var args = ImmutableArray.CreateBuilder<HelperArgument>();
+            var stages = new List<string>();
+            var stageStart = 0;
+            var quote = '\0';
 
-            while (!slice.IsEmpty)
+            for (var index = 0; index < input.Length; index++)
             {
-                if (slice.CurrentChar == '"' || slice.CurrentChar == '\'')
+                var current = input[index];
+                if (quote != '\0')
                 {
-                    args.Add(ParseQuotedString(ref slice));
+                    if (current == '\\' && index + 1 < input.Length)
+                    {
+                        index++;
+                    }
+                    else if (current == quote)
+                    {
+                        quote = '\0';
+                    }
+                }
+                else if (current == '"' || current == '\'')
+                {
+                    quote = current;
+                }
+                else if (current == '|')
+                {
+                    stages.Add(input.Substring(stageStart, index - stageStart));
+                    stageStart = index + 1;
+                }
+            }
+
+            if (quote != '\0')
+            {
+                throw new StubbleException("Unclosed string in helper tag.");
+            }
+
+            stages.Add(input.Substring(stageStart));
+            return stages;
+        }
+
+        private static string ReadName(string stage, out string args)
+        {
+            var start = 0;
+            while (start < stage.Length && char.IsWhiteSpace(stage[start]))
+            {
+                start++;
+            }
+
+            var end = start;
+            while (end < stage.Length && !char.IsWhiteSpace(stage[end]))
+            {
+                end++;
+            }
+
+            args = stage.Substring(end);
+            return stage.Substring(start, end - start);
+        }
+
+        private static ImmutableArray<HelperArgument> ParseArguments(string input)
+        {
+            var args = ImmutableArray.CreateBuilder<HelperArgument>();
+            var index = 0;
+            while (index < input.Length)
+            {
+                while (index < input.Length && char.IsWhiteSpace(input[index]))
+                {
+                    index++;
+                }
+
+                if (index >= input.Length)
+                {
+                    break;
+                }
+
+                if (input[index] == '"' || input[index] == '\'')
+                {
+                    var quote = input[index++];
+                    var valueStart = index;
+                    var value = new StringBuilder();
+                    var closed = false;
+                    while (index < input.Length)
+                    {
+                        if (input[index] == '\\' && index + 1 < input.Length)
+                        {
+                            value.Append(input[index++]);
+                            value.Append(input[index++]);
+                        }
+                        else if (input[index] == quote)
+                        {
+                            closed = true;
+                            break;
+                        }
+                        else
+                        {
+                            value.Append(input[index++]);
+                        }
+                    }
+
+                    if (!closed)
+                    {
+                        throw new StubbleException($"Unclosed string at {valueStart.ToString(CultureInfo.InvariantCulture)}");
+                    }
+
+                    args.Add(new HelperArgument(Regex.Unescape(value.ToString()), false));
+                    index++;
                 }
                 else
                 {
-                    while (slice.CurrentChar.IsWhitespace())
+                    var value = new StringBuilder();
+                    while (index < input.Length && !char.IsWhiteSpace(input[index]))
                     {
-                        slice.NextChar();
+                        value.Append(input[index++]);
                     }
 
-                    var start = slice.Start;
-
-                    while (!slice.CurrentChar.IsWhitespace() && !slice.IsEmpty)
-                    {
-                        slice.NextChar();
-                    }
-
-                    args.Add(new HelperArgument(slice.Text.Substring(start, slice.Start - start)));
-                }
-
-                while (slice.CurrentChar.IsWhitespace())
-                {
-                    slice.NextChar();
+                    args.Add(new HelperArgument(value.ToString()));
                 }
             }
 
             return args.ToImmutable();
-        }
-
-        private static HelperArgument ParseQuotedString(ref StringSlice slice)
-        {
-            var startQuote = slice.CurrentChar;
-            slice.NextChar();
-            var st = slice.Start;
-
-            while (!(slice.CurrentChar == startQuote && slice[slice.Start - 1] != '\\'))
-            {
-                if (slice.IsEmpty)
-                    throw new StubbleException($"Unclosed string at {slice.Start}");
-
-                slice.NextChar();
-            }
-
-            var end = slice.Start;
-            slice.NextChar();
-
-            return new HelperArgument(Regex.Unescape(slice.Text.Substring(st, end - st)), false);
         }
     }
 }

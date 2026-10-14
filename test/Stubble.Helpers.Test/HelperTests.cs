@@ -442,5 +442,113 @@ namespace Stubble.Helpers.Test
 
             res.Should().Be("£10.00, £100.26");
         }
+
+        [Fact]
+        public void ItShouldPassLiteralThroughMultiplePipelineStages()
+        {
+            var helpers = new Helpers()
+                .Register<string, string>("Split", (context, value, separator) => value.Split(new[] { separator }, StringSplitOptions.None))
+                .Register<string[]>("Concatenate", (context, values) => string.Concat(values))
+                .Register<string>("ToUpperCase", (context, value) => value.ToUpperInvariant());
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf => conf.AddHelpers(helpers))
+                .Build();
+
+            var tmpl = @"{{ ""One,Two,Three"" | Split "","" | Concatenate | ToUpperCase}}";
+            var res = renderer.Render(tmpl, new { });
+
+            res.Should().Be("ONETWOTHREE");
+        }
+
+        [Fact]
+        public void ItShouldAllowAHelperCallToStartAPipeline()
+        {
+            var helpers = new Helpers()
+                .Register<string, string>("Split", (context, value, separator) => value.Split(new[] { separator }, StringSplitOptions.None))
+                .Register<string[]>("Concatenate", (context, values) => string.Concat(values));
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf => conf.AddHelpers(helpers))
+                .Build();
+
+            var tmpl = @"{{ Split ""One,Two,Three"" "","" | Concatenate }}";
+            var res = renderer.Render(
+                tmpl,
+                new { },
+                new RenderSettings { SkipHtmlEncoding = true });
+
+            res.Should().Be("OneTwoThree");
+        }
+
+        [Fact]
+        public void ItShouldKeepPipesInsideQuotedLiterals()
+        {
+            var helpers = new Helpers()
+                .Register<string>("ToUpperCase", (context, value) => value.ToUpperInvariant());
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf => conf.AddHelpers(helpers))
+                .Build();
+
+            var tmpl = @"{{ ""first|last"" | ToUpperCase }}";
+            var res = renderer.Render(
+                tmpl,
+                new { });
+
+            res.Should().Be("FIRST|LAST");
+        }
+
+        [Fact]
+        public void ItShouldUseContextValueAsPipelineInput()
+        {
+            var helpers = new Helpers()
+                .Register<string>("ToUpperCase", (context, value) => value.ToUpperInvariant());
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf => conf.AddHelpers(helpers))
+                .Build();
+
+            var tmpl = "{{ Value | ToUpperCase }}";
+            var res = renderer.Render(tmpl, new { Value = "from context" });
+
+            res.Should().Be("FROM CONTEXT");
+        }
+
+        [Fact]
+        public void ItShouldPassNullToReferenceTypeParameter()
+        {
+            var helpers = new Helpers()
+                .Register<string>("Nullify", (context, value) => null)
+                .Register<string>("Default", (context, value) => value ?? "fallback");
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf => conf.AddHelpers(helpers))
+                .Build();
+
+            var tmpl = @"{{ ""value"" | Nullify | Default }}";
+            var res = renderer.Render(tmpl, new { });
+
+            res.Should().Be("fallback");
+        }
+
+        [Fact]
+        public void ItShouldStopPipelineWhenNullCannotBePassedToValueTypeParameter()
+        {
+            var helpers = new Helpers()
+                .Register<string>("Nullify", (context, value) => null)
+                .Register<int>("FormatNumber", (context, value) => value.ToString());
+
+            var renderer = new StubbleBuilder()
+                .Configure(conf => conf.AddHelpers(helpers))
+                .Build();
+
+            var tmpl = @"{{ ""value"" | Nullify | FormatNumber }}";
+            var res = renderer.Render(
+                tmpl,
+                new { });
+
+            res.Should().BeEmpty();
+        }
     }
 }

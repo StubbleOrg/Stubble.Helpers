@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Stubble.Core.Contexts;
 using Stubble.Core.Renderers.StringRenderer;
@@ -34,53 +33,44 @@ namespace Stubble.Helpers
                 throw new ArgumentNullException(nameof(context));
             }
 
-            if (_helperCache.TryGetValue(obj.Name, out var helper))
+            object result;
+            if (obj.InitialValue.HasValue)
             {
-                var helperContext = new HelperContext(context);
-                var args = obj.Args;
-
-                var argumentTypes = helper.ArgumentTypes;
-                if ((argumentTypes.Length - 1) == args.Length)
+                var initialValue = obj.InitialValue.Value;
+                result = initialValue.ShouldAttemptContextLoad
+                    ? context.Lookup(initialValue.Value)
+                    : initialValue.Value;
+                if (result is null)
                 {
-                    var arr = new object[args.Length + 1];
-                    arr[0] = helperContext;
-
-                    for (var i = 0; i < args.Length; i++)
-                    {
-                        var arg = args[i].ShouldAttemptContextLoad
-                            ? context.Lookup(args[i].Value)
-                            : args[i].Value;
-
-                        arg = TryConvertTypeIfRequired(arg, args[i].Value, argumentTypes[i + 1]);
-
-                        if (arg is null)
-                        {
-                            return;
-                        }
-
-                        arr[i + 1] = arg;
-                    }
-
-                    var result = helper.Delegate.Method.Invoke(helper.Delegate.Target, arr);
-
-                    string value = null;
-                    if (result is string str)
-                    {
-                        value = str;
-                    }
-                    else if (result is object)
-                    {
-                        value = Convert.ToString(result, context.RenderSettings.CultureInfo);
-                    }
-
-                    if (!context.RenderSettings.SkipHtmlEncoding && obj.EscapeResult && value is object)
-                    {
-                        value = context.RendererSettings.EncodingFuction(value);
-                    }
-
-                    renderer.Write(value);
+                    return;
                 }
             }
+            else if (!TryInvokeHelper(obj.Name, obj.Args, null, false, context, out result))
+            {
+                return;
+            }
+
+            if (!obj.Pipeline.IsDefault)
+            {
+                foreach (var stage in obj.Pipeline)
+                {
+                    if (!TryInvokeHelper(stage.Name, stage.Args, result, true, context, out result))
+                    {
+                        return;
+                    }
+                }
+            }
+
+            var value = result is string str
+                ? str
+                : Convert.ToString(result, context.RenderSettings.CultureInfo);
+
+            if (!context.RenderSettings.SkipHtmlEncoding && obj.EscapeResult && value is object)
+            {
+                value = context.RendererSettings.EncodingFuction(value);
+            }
+
+            renderer.Write(value);
         }
 
         protected override Task WriteAsync(StringRender renderer, HelperToken obj, Context context)
@@ -124,6 +114,68 @@ namespace Stubble.Helpers
             }
 
             return null;
+        }
+
+        private bool TryInvokeHelper(string name, ImmutableArray<HelperArgument> args, object pipedValue, bool hasPipedValue, Context context, out object result)
+        {
+            result = null;
+            if (!_helperCache.TryGetValue(name, out var helper))
+            {
+                return false;
+            }
+
+            var explicitArgumentCount = args.Length + (hasPipedValue ? 1 : 0);
+            var argumentTypes = helper.ArgumentTypes;
+            if (argumentTypes.Length - 1 != explicitArgumentCount)
+            {
+                return false;
+            }
+
+            var callArguments = new object[explicitArgumentCount + 1];
+            callArguments[0] = new HelperContext(context);
+            var argumentIndex = 1;
+            if (hasPipedValue)
+            {
+                if (pipedValue is null)
+                {
+                    var pipedArgumentType = argumentTypes[argumentIndex];
+                    if (pipedArgumentType.IsValueType && Nullable.GetUnderlyingType(pipedArgumentType) is null)
+                    {
+                        return false;
+                    }
+
+                    callArguments[argumentIndex++] = null;
+                }
+                else
+                {
+                    var convertedValue = TryConvertTypeIfRequired(pipedValue, null, argumentTypes[argumentIndex]);
+                    if (convertedValue is null)
+                    {
+                        return false;
+                    }
+
+                    callArguments[argumentIndex++] = convertedValue;
+                }
+            }
+
+            for (var index = 0; index < args.Length; index++)
+            {
+                var argument = args[index];
+                var value = argument.ShouldAttemptContextLoad
+                    ? context.Lookup(argument.Value)
+                    : argument.Value;
+
+                value = TryConvertTypeIfRequired(value, argument.Value, argumentTypes[argumentIndex]);
+                if (value is null)
+                {
+                    return false;
+                }
+
+                callArguments[argumentIndex++] = value;
+            }
+
+            result = helper.Delegate.Method.Invoke(helper.Delegate.Target, callArguments);
+            return true;
         }
     }
 }

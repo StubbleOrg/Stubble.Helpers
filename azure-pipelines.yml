@@ -11,10 +11,14 @@ trigger:
 jobs:
   - job: Windows
     pool:
-      vmImage: "windows-2019"
+      vmImage: "windows-2022"
     steps:
       - checkout: self
         submodules: true
+      - task: UseDotNet@2
+        inputs:
+          packageType: "sdk"
+          version: "10.0.x"
       - task: DotNetCoreCLI@2
         inputs:
           command: "custom"
@@ -53,7 +57,7 @@ jobs:
       - task: UseDotNet@2
         inputs:
           packageType: "sdk"
-          version: "3.1.x"
+          version: "10.0.x"
       - task: DotNetCoreCLI@2
         inputs:
           command: "custom"
@@ -78,10 +82,14 @@ jobs:
 
   - job: Linux
     pool:
-      vmImage: "ubuntu-18.04"
+      vmImage: "ubuntu-24.04"
     steps:
       - checkout: self
         submodules: true
+      - task: UseDotNet@2
+        inputs:
+          packageType: "sdk"
+          version: "10.0.x"
       - task: DotNetCoreCLI@2
         inputs:
           command: "custom"
